@@ -862,146 +862,235 @@ function SK(){
 function A(){
   const an=gv('a-anno'),ms=gv('a-mes');
   const{a:mA,m:mM}=getMoM(an,ms),{a:yA}=getYoY(an,ms);
-  const fM=gv('a-marca'),fC=gv('a-calibre'),fS=gv('a-sku'),fSl=gv('a-sala'),fCat=gv('a-cat'),fDep=gv('a-dep');
-
-  // MoM only valid when both anno AND mes are selected
-  const hasMoM=!!(an&&ms&&mA&&mM);
-  const hasYoY=!!(an&&yA);
+  const fM=gv('a-marca'),fC=gv('a-calibre'),fS=gv('a-sku'),fSl=gv('a-sala'),fCat=gv('a-cat'),fDep=gv('a-dep'),fCatVC=gv('a-catvc');
 
   const data=filtA(an,ms);
-  const dMoM=hasMoM?filtA(mA,mM):[];
-  const dYoY=hasYoY?filtA(yA,ms):[];
+  const dMoM=filtA(mA,mM);
+  const dYoY=filtA(yA,ms);
   const catC=filtCat(an,ms),catM=filtCat(mA,mM),catY=filtCat(yA,ms);
 
-  const mLbl=mA?`MoM ${MN[parseInt(mM)]} ${mA}`:'MoM',yLbl=yA?`YoY ${yA}`:'YoY';
-  const ctx=[];if(fM)ctx.push(`Marca: ${fM}`);if(fC)ctx.push(`Calibre: ${fC}`);if(fS)ctx.push(`SKU: ${fS}`);if(fSl)ctx.push(`Sala: ${fSl}`);if(fCat)ctx.push(`Cat: ${fCat}`);if(fDep)ctx.push(`Depto: ${fDep}`);
-  const ctxL=ctx.length?` [${ctx.join(' · ')}]`:'';
+  const mLbl=mA?`${MN[parseInt(mM)]} ${mA}`:'mes anterior';
+  const yLbl=yA?`${yA}`:'año anterior';
+  const mLblFull=mA?`MoM ${MN[parseInt(mM)]} ${mA}`:'MoM';
+  const yLblFull=yA?`YoY ${yA}`:'YoY';
+
+  const ctx=[];if(fM)ctx.push(fM);if(fC)ctx.push(fC);if(fS)ctx.push(fS);if(fSl)ctx.push(fSl);if(fCat)ctx.push(fCat);if(fDep)ctx.push(fDep);if(fCatVC)ctx.push(fCatVC);
+  const ctxL=ctx.length?ctx.join(' · '):'Todo el portafolio';
 
   const HL=d=>d.reduce((s,r)=>s+nv(r['Hectolitros']),0);
   const hC=HL(data),hP=HL(dMoM),hY=HL(dYoY);
   const hCatC=HL(catC),hCatM=HL(catM),hCatY=HL(catY);
-  const als=[];
 
-  // === VOLUMEN GENERAL ===
   const vM=vPct(hC,hP),vY=vPct(hC,hY);
+  const shC=hCatC>0?hC/hCatC*100:0;
+  const shP=hCatM>0?hP/hCatM*100:null;
+  const shY=hCatY>0?hY/hCatY*100:null;
+  const dShM=shP!==null?shC-shP:null;
+  const dShY=shY!==null?shC-shY:null;
+
+  let html='';
+
+  // =====================================================
+  // SECCIÓN 1: RESUMEN EJECUTIVO MoM y YoY
+  // =====================================================
+  const resColor=vM!==null&&vM<-0.05?'#FEF2F2':vM!==null&&vM>0.05?'#F0FDF4':'#EFF6FF';
+  const resIconVol=vM===null?'📊':vM>0.05?'📈':vM<-0.05?'📉':'➡️';
+  const resIconSh=dShM===null?'🎯':dShM>0.5?'🏆':dShM<-0.5?'⚠️':'🎯';
+
+  html+=`<div style="background:${resColor};border-radius:10px;padding:16px 20px;margin-bottom:14px;border:1px solid #E1E5EB">
+    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">📋 Resumen ejecutivo · ${ctxL}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
+      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
+        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">${resIconVol} Volumen actual</div>
+        <div style="font-size:20px;font-weight:700;color:#1C2B4A">${hC.toFixed(1)} Hl</div>
+        <div style="font-size:11px;margin-top:4px;color:${vM!==null&&vM>0?'#059669':'#DC2626'}">${vM!==null?`${vM>0?'▲ +':'▼ '}${Math.abs(vM*100).toFixed(1)}% vs ${mLbl}`:'Sin datos MoM'}</div>
+        <div style="font-size:11px;color:${vY!==null&&vY>0?'#059669':'#DC2626'}">${vY!==null?`${vY>0?'▲ +':'▼ '}${Math.abs(vY*100).toFixed(1)}% vs ${yLbl}`:'Sin datos YoY'}</div>
+      </div>
+      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
+        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">${resIconSh} Share en categoría</div>
+        <div style="font-size:20px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}%</div>
+        <div style="font-size:11px;margin-top:4px;color:${dShM!==null&&dShM>0?'#059669':'#DC2626'}">${dShM!==null?`${dShM>0?'▲ +':'▼ '}${Math.abs(dShM).toFixed(2)}pp vs ${mLbl}`:'Sin datos MoM'}</div>
+        <div style="font-size:11px;color:${dShY!==null&&dShY>0?'#059669':'#DC2626'}">${dShY!==null?`${dShY>0?'▲ +':'▼ '}${Math.abs(dShY).toFixed(2)}pp vs ${yLbl}`:'Sin datos YoY'}</div>
+      </div>
+      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
+        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">💰 Precio prom (Emp.1)</div>
+        <div style="font-size:20px;font-weight:700;color:#1C2B4A">Bs ${pu1(data).toFixed(2)}</div>
+        <div style="font-size:11px;margin-top:4px;color:#8492A6">vs ant: Bs ${pu1(dMoM).toFixed(2)}</div>
+        ${(()=>{const vpu=vPct(pu1(data),pu1(dMoM));return vpu!==null?`<div style="font-size:11px;color:${vpu>0?'#DC2626':'#059669'}">${vpu>0?'▲ +':'▼ '}${Math.abs(vpu*100).toFixed(1)}%</div>`:'';})()}
+      </div>
+    </div>
+  </div>`;
+
+  // =====================================================
+  // SECCIÓN 2: ANÁLISIS POR CALIBRE — share ganado/perdido + SKUs responsables
+  // =====================================================
   if(hC>0){
-    if(vM!==null&&vM<-0.1)als.push({t:'danger',ti:`Caída crítica${ctxL}`,bo:`Volumen cayó <strong>${Math.abs(vM*100).toFixed(1)}%</strong> ${mLbl} (${hP.toFixed(0)} → ${hC.toFixed(0)} Hl).`,ac:['def','mon']});
-    else if(vM!==null&&vM<-0.05)als.push({t:'warning',ti:`Caída moderada${ctxL}`,bo:`Volumen cayó <strong>${Math.abs(vM*100).toFixed(1)}%</strong> ${mLbl}.`,ac:['mon']});
-    else if(vM!==null&&vM>0.1)als.push({t:'success',ti:`Crecimiento destacado${ctxL}`,bo:`Volumen creció <strong>+${(vM*100).toFixed(1)}%</strong> ${mLbl} (${hP.toFixed(0)} → ${hC.toFixed(0)} Hl).`,ac:['atk']});
-    if(vY!==null&&vY<-0.1)als.push({t:'danger',ti:`Caída vs año anterior${ctxL}`,bo:`Volumen cayó <strong>${Math.abs(vY*100).toFixed(1)}%</strong> ${yLbl}.`,ac:['def']});
-    else if(vY!==null&&vY>0.1)als.push({t:'success',ti:`Crecimiento vs año anterior${ctxL}`,bo:`Volumen creció <strong>+${(vY*100).toFixed(1)}%</strong> ${yLbl}.`,ac:['atk']});
-  } else {
-    als.push({t:'info',ti:`Sin datos para el período${ctxL}`,bo:'No se encontraron registros. Verifica que el año y mes seleccionados tengan datos.',ac:[]});
-  }
+    const pCal=grp(data,'Calibre'),mapCalM={},mapCalY={};
+    grp(dMoM,'Calibre').forEach(([c,v])=>mapCalM[c]=v);
+    grp(dYoY,'Calibre').forEach(([c,v])=>mapCalY[c]=v);
 
-  // Show info if no period filter for MoM comparison
-  if((!an||!ms)&&hC>0){
-    als.push({t:'info',ti:`Selecciona Año y Mes para ver comparativos MoM${ctxL}`,bo:`Tienes datos (${hC.toFixed(1)} Hl) pero sin período específico no se puede calcular la variación vs mes anterior.`,ac:[]});
-  }
-
-  // === SHARE EN CATEGORÍA ===
-  if(hC>0&&hCatC>0){
-    const shC=hC/hCatC*100,shP=hCatM>0?hP/hCatM*100:null,shY=hCatY>0?hY/hCatY*100:null;
-    const dMv=shP!==null?shC-shP:null,dYv=shY!==null?shC-shY:null;
-    als.push({t:'info',ti:`Share en categoría${ctxL}`,bo:`Share actual: <strong>${shC.toFixed(2)}%</strong>${dMv!==null?` — ${dMv>0?'▲ +':'▼ '}${Math.abs(dMv).toFixed(2)}pp ${mLbl}`:''}${dYv!==null?` — ${dYv>0?'▲ +':'▼ '}${Math.abs(dYv).toFixed(2)}pp ${yLbl}`:''}`,ac:[]});
-    if(dMv!==null&&dMv<-2)als.push({t:'danger',ti:`Pérdida de share${ctxL}`,bo:`Cayó <strong>${Math.abs(dMv).toFixed(2)}pp</strong> ${mLbl}.`,ac:['def','mon']});
-    if(dMv!==null&&dMv>2)als.push({t:'success',ti:`Ganancia de share${ctxL}`,bo:`Ganó <strong>+${dMv.toFixed(2)}pp</strong> ${mLbl}.`,ac:['atk']});
-  }
-
-  // === POR MARCA (si no hay filtro específico de marca) ===
-  if(!fM&&!fC&&!fS){
-    const pM=grp(data,'Marca'),mapMM={},mapMY={};
-    grp(dMoM,'Marca').forEach(([m,v])=>mapMM[m]=v);grp(dYoY,'Marca').forEach(([m,v])=>mapMY[m]=v);
-    pM.forEach(([m,v])=>{
-      const sC=hC>0?v.hl/hC*100:0,sP=mapMM[m]&&hP>0?mapMM[m].hl/hP*100:null,sY=mapMY[m]&&hY>0?mapMY[m].hl/hY*100:null;
-      const dMv=sP!==null?sC-sP:null;
-      if(dMv!==null&&dMv<-2)als.push({t:'danger',ti:`Pérdida share: ${m}`,bo:`Perdió <strong>${Math.abs(dMv).toFixed(2)}pp</strong> ${mLbl} (${sP.toFixed(1)}% → ${sC.toFixed(1)}%).`,ac:['def','mon']});
-      if(dMv!==null&&dMv>2)als.push({t:'success',ti:`Gana share: ${m}`,bo:`Ganó <strong>+${dMv.toFixed(2)}pp</strong> ${mLbl}.`,ac:['atk']});
-      if(sC<2&&v.hl>0)als.push({t:'warning',ti:`Share crítico: ${m}`,bo:`Solo <strong>${sC.toFixed(2)}%</strong> del share. Riesgo de deslistado.`,ac:['def']});
-    });
-  }
-
-  // === DESGLOSE POR CALIBRE (si hay filtro de marca) ===
-  if(fM&&hC>0){
-    als.push({t:'info',ti:`── Análisis por Calibre · ${fM}`,bo:'',ac:[],seccion:true});
-    const pCal=grp(data,'Calibre'),mapCalMoM={};
-    grp(dMoM,'Calibre').forEach(([c,v])=>mapCalMoM[c]=v);
+    let calRows='';
     pCal.forEach(([cal,v])=>{
-      const prev=mapCalMoM[cal];
-      const dv=prev?vPct(v.hl,prev.hl):null;
-      const shCal=hC>0?v.hl/hC*100:0;
-      if(dv!==null&&Math.abs(dv)>0.05){
-        const tipo=dv<-0.1?'danger':dv>0.1?'success':'info';
-        als.push({t:tipo,ti:`Calibre ${cal}: ${dv>0?'▲ +':'▼ '}${Math.abs(dv*100).toFixed(1)}% ${mLbl}`,bo:`${v.hl.toFixed(1)} Hl · ${shCal.toFixed(1)}% del total marca.`,ac:dv<-0.1?['def','mon']:['atk']});
-      }
+      const shCalC=hC>0?v.hl/hC*100:0;
+      const shCalP=mapCalM[cal]&&hP>0?mapCalM[cal].hl/hP*100:null;
+      const dCal=shCalP!==null?shCalC-shCalP:null;
+      const trend=dCal!==null&&dCal>0.3?'▲':dCal!==null&&dCal<-0.3?'▼':'→';
+      const tColor=dCal!==null&&dCal>0.3?'#059669':dCal!==null&&dCal<-0.3?'#DC2626':'#8492A6';
+      // Top SKUs responsables
+      const skusCal=grp(data.filter(r=>r['Calibre']===cal),'SKU')||grp(data.filter(r=>r['Calibre']===cal),'DesProducto');
+      const topSKUs=skusCal.slice(0,2).map(([s])=>s.substring(0,25)).join(', ');
+      calRows+=`<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${cal}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${v.hl.toFixed(1)} Hl</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${shCalC.toFixed(1)}%</span></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:${tColor};font-weight:700">${trend} ${dCal!==null?`${dCal>0?'+':''}${dCal.toFixed(2)}pp`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-size:10px;color:#8492A6">${topSKUs||'—'}</td>
+      </tr>`;
     });
+
+    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">📦 Calibre · Ganadores y perdedores de share vs ${mLbl}</div>
+      <div style="overflow-x:auto"><table class="tbl">
+        <thead><tr><th>Calibre</th><th>Volumen</th><th>Share %</th><th>Δ vs ${mLbl}</th><th>SKUs principales</th></tr></thead>
+        <tbody>${calRows}</tbody>
+      </table></div>
+    </div>`;
   }
 
-  // === DESGLOSE POR EMPAQUE (si hay filtro de marca) ===
-  if(fM&&hC>0){
-    als.push({t:'info',ti:`── Análisis por Empaque · ${fM}`,bo:'',ac:[],seccion:true});
-    const pEmp=grp(data,'Empaque'),mapEmpMoM={};
-    grp(dMoM,'Empaque').forEach(([e,v])=>mapEmpMoM[e]=v);
-    pEmp.forEach(([emp,v])=>{
-      const prev=mapEmpMoM[emp];
-      const dv=prev?vPct(v.hl,prev.hl):null;
-      const shEmp=hC>0?v.hl/hC*100:0;
-      if(dv!==null&&Math.abs(dv)>0.05){
-        const tipo=dv<-0.1?'danger':dv>0.1?'success':'info';
-        als.push({t:tipo,ti:`Empaque ${emp}: ${dv>0?'▲ +':'▼ '}${Math.abs(dv*100).toFixed(1)}% ${mLbl}`,bo:`${v.hl.toFixed(1)} Hl · ${shEmp.toFixed(1)}% del total marca.`,ac:dv<-0.1?['def','mon']:['atk']});
-      }
+  // =====================================================
+  // SECCIÓN 3: COMPETENCIA — a quién le quitaste share o quién te lo quitó
+  // =====================================================
+  if(hC>0&&hCatC>0){
+    // Marcas en la categoría completa (sin filtro marca)
+    const todasMarcasC=grp(catC,'Marca');
+    const todasMarcasM=grp(catM,'Marca');
+    const mapTMM={};todasMarcasM.forEach(([m,v])=>mapTMM[m]=v);
+    const compRows=[];
+    todasMarcasC.forEach(([m,v])=>{
+      if(fM&&m===fM)return; // excluir la propia marca si está filtrada
+      const shMC=hCatC>0?v.hl/hCatC*100:0;
+      const shMP=mapTMM[m]&&hCatM>0?mapTMM[m].hl/hCatM*100:null;
+      const dM=shMP!==null?shMC-shMP:null;
+      compRows.push({m,shMC,dM});
     });
+    compRows.sort((a,b)=>b.shMC-a.shMC);
+    const ganadoresComp=compRows.filter(x=>x.dM!==null&&x.dM>0.3).sort((a,b)=>b.dM-a.dM).slice(0,5);
+    const perdedoresComp=compRows.filter(x=>x.dM!==null&&x.dM<-0.3).sort((a,b)=>a.dM-b.dM).slice(0,5);
+
+    const insight=dShM!==null&&dShM<-0.5&&ganadoresComp.length>0
+      ?`<div style="background:#FEF2F2;border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#991B1B">⚠️ Perdiste <strong>${Math.abs(dShM).toFixed(2)}pp</strong> de share. Las marcas que más crecieron: <strong>${ganadoresComp.slice(0,2).map(x=>x.m).join(', ')}</strong>.</div>`
+      :dShM!==null&&dShM>0.5&&perdedoresComp.length>0
+      ?`<div style="background:#F0FDF4;border-left:3px solid #059669;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#065F46">🏆 Ganaste <strong>+${dShM.toFixed(2)}pp</strong> de share. Las marcas que más cayeron: <strong>${perdedoresComp.slice(0,2).map(x=>x.m).join(', ')}</strong>.</div>`
+      :'';
+
+    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:10px">⚔️ Competencia · Movimientos de share en la categoría</div>
+      ${insight}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#059669;margin-bottom:6px">▲ Marcas que ganaron share</div>
+          ${ganadoresComp.length?ganadoresComp.map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F4F5F7;font-size:11px"><span style="font-weight:600">${x.m}</span><span class="tag t-green">+${x.dM.toFixed(2)}pp</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:6px 0">Sin datos</div>'}
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;color:#DC2626;margin-bottom:6px">▼ Marcas que perdieron share</div>
+          ${perdedoresComp.length?perdedoresComp.map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F4F5F7;font-size:11px"><span style="font-weight:600">${x.m}</span><span class="tag t-red">${x.dM.toFixed(2)}pp</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:6px 0">Sin datos</div>'}
+        </div>
+      </div>
+    </div>`;
   }
 
-  // === DESGLOSE POR SALA ===
+  // =====================================================
+  // SECCIÓN 4: SALAS — quién cayó y quién creció vs MoM
+  // =====================================================
   if(hC>0){
-    als.push({t:'info',ti:`── Análisis por Sala${ctxL}`,bo:'',ac:[],seccion:true});
-    const pSala=grp(data,'Salas'),mapSM={};grp(dMoM,'Salas').forEach(([s,v])=>mapSM[s]=v);
-    let hayAlertaSala=false;
-    pSala.forEach(([s,v])=>{
-      const prev=mapSM[s];if(!prev)return;
-      const d=vPct(v.hl,prev.hl);
-      if(d!==null&&Math.abs(d)>0.08){
-        hayAlertaSala=true;
-        const tipo=d<-0.1?'danger':d>0.1?'success':'info';
-        als.push({t:tipo,ti:`Sala ${s}: ${d>0?'▲ +':'▼ '}${Math.abs(d*100).toFixed(1)}% ${mLbl}`,bo:`${prev.hl.toFixed(0)} → ${v.hl.toFixed(0)} Hl.`,ac:d<-0.1?['def','mon']:['atk']});
-      }
+    const pSala=grp(data,'Salas'),mapSM={};
+    grp(dMoM,'Salas').forEach(([s,v])=>mapSM[s]=v);
+    const salaRows=pSala.map(([s,v])=>{
+      const prev=mapSM[s];
+      const dv=prev?vPct(v.hl,prev.hl):null;
+      const shS=hC>0?v.hl/hC*100:0;
+      const trend=dv!==null&&dv>0.05?'▲':dv!==null&&dv<-0.05?'▼':'→';
+      const tColor=dv!==null&&dv>0.05?'#059669':dv!==null&&dv<-0.05?'#DC2626':'#8492A6';
+      return{s,hl:v.hl,shS,prev:prev?prev.hl:null,dv,trend,tColor};
     });
-    if(!hayAlertaSala)als.push({t:'success',ti:`Salas estables${ctxL}`,bo:'Sin variaciones significativas por sala.',ac:[]});
+
+    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">🏪 Salas · Performance vs ${mLbl}</div>
+      <div style="overflow-x:auto"><table class="tbl">
+        <thead><tr><th>Sala</th><th>Hl actual</th><th>Hl ${mLbl}</th><th>Variación</th><th>% del total</th><th>Tendencia</th></tr></thead>
+        <tbody>${salaRows.map(r=>`<tr>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${r.s}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${r.hl.toFixed(1)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${r.prev!==null?r.prev.toFixed(1):'—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:${r.tColor};font-weight:700">${r.dv!==null?`${r.trend} ${r.dv>0?'+':''}${(r.dv*100).toFixed(1)}%`:'—'}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${r.shS.toFixed(1)}%</span></td>
+          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-size:18px">${r.dv!==null&&r.dv>0.05?'🟢':r.dv!==null&&r.dv<-0.05?'🔴':'🟡'}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
   }
 
-  // === DESGLOSE POR PRECIO (Empaque 1) ===
+  // =====================================================
+  // SECCIÓN 5: CONSEJO ESTRATÉGICO
+  // =====================================================
   if(hC>0){
-    als.push({t:'info',ti:`── Análisis de Precio (Empaque 1)${ctxL}`,bo:'',ac:[],seccion:true});
-    const gPU={},gPUM={};
-    data.filter(r=>String(r['Empaque'])==='1').forEach(r=>{const m=r['Marca']||'?';if(!gPU[m])gPU[m]={ing:0,qty:0};gPU[m].ing+=nv(r['Ingreso (Bs)']);gPU[m].qty+=nv(r['QtyVnt']);});
-    dMoM.filter(r=>String(r['Empaque'])==='1').forEach(r=>{const m=r['Marca']||'?';if(!gPUM[m])gPUM[m]={ing:0,qty:0};gPUM[m].ing+=nv(r['Ingreso (Bs)']);gPUM[m].qty+=nv(r['QtyVnt']);});
-    const avgPU2=Object.values(gPU).reduce((s,v)=>s+(v.qty>0?v.ing/v.qty:0),0)/(Object.keys(gPU).length||1);
-    let hayAlertaPrecio=false;
-    Object.entries(gPU).forEach(([m,v])=>{
-      const pu=v.qty>0?v.ing/v.qty:0,prev=gPUM[m],puP=prev&&prev.qty>0?prev.ing/prev.qty:0;
-      const varP=vPct(pu,puP);
-      if(varP!==null&&varP>0.05){hayAlertaPrecio=true;als.push({t:'warning',ti:`↑ Alza precio: ${m}`,bo:`+${(varP*100).toFixed(1)}% ${mLbl} — Bs ${puP.toFixed(2)} → Bs ${pu.toFixed(2)}.`,ac:['mon','def']});}
-      if(varP!==null&&varP<-0.05){hayAlertaPrecio=true;als.push({t:'info',ti:`↓ Baja precio: ${m}`,bo:`−${Math.abs(varP*100).toFixed(1)}% ${mLbl} — Bs ${puP.toFixed(2)} → Bs ${pu.toFixed(2)}.`,ac:['mon','atk']});}
-      if(avgPU2>0&&pu>0){const idx=pu/avgPU2;
-        if(idx>1.2){hayAlertaPrecio=true;als.push({t:'info',ti:`Precio premium: ${m}`,bo:`Precio <strong>${((idx-1)*100).toFixed(0)}%</strong> sobre promedio categoría (Bs ${pu.toFixed(2)} vs Bs ${avgPU2.toFixed(2)}).`,ac:['mon']});}
-        if(idx<0.75){hayAlertaPrecio=true;als.push({t:'warning',ti:`Precio bajo: ${m}`,bo:`Precio <strong>${((1-idx)*100).toFixed(0)}%</strong> bajo el promedio.`,ac:['def','mon']});}
-      }
+    const consejos=[];
+
+    // Qué defender
+    const salasCayendo=grp(data,'Salas').filter(([s,v])=>{
+      const prev=grp(dMoM,'Salas').find(([sm])=>sm===s);
+      return prev&&vPct(v.hl,prev[1].hl)<-0.1;
     });
-    if(!hayAlertaPrecio)als.push({t:'success',ti:`Precios estables${ctxL}`,bo:'Sin movimientos significativos de precio.',ac:[]});
+    if(salasCayendo.length>0)consejos.push({tipo:'defender',icono:'🛡️',txt:`Reforzar presencia en <strong>${salasCayendo.slice(0,2).map(([s])=>s).join(', ')}</strong> — salas con caída significativa.`});
+
+    // Dónde atacar
+    const salasSubiendo=grp(data,'Salas').filter(([s,v])=>{
+      const prev=grp(dMoM,'Salas').find(([sm])=>sm===s);
+      return prev&&vPct(v.hl,prev[1].hl)>0.1;
+    });
+    if(salasSubiendo.length>0)consejos.push({tipo:'atacar',icono:'⚔️',txt:`Capitalizar el crecimiento en <strong>${salasSubiendo.slice(0,2).map(([s])=>s).join(', ')}</strong> — salas con momentum positivo.`});
+
+    // Calibre que mejor anduvo
+    const topCal=grp(data,'Calibre')[0];
+    if(topCal)consejos.push({tipo:'bien',icono:'✅',txt:`El calibre <strong>${topCal[0]}</strong> es tu mayor volumen (${topCal[1].hl.toFixed(1)} Hl). Asegura su disponibilidad y precio competitivo.`});
+
+    // Share general
+    if(dShM!==null&&dShM>0.5)consejos.push({tipo:'bien',icono:'🏆',txt:`Ganaste <strong>+${dShM.toFixed(2)}pp</strong> de share vs ${mLbl}. Mantén la estrategia actual — está funcionando.`});
+    if(dShM!==null&&dShM<-0.5)consejos.push({tipo:'defender',icono:'⚠️',txt:`Perdiste <strong>${Math.abs(dShM).toFixed(2)}pp</strong> de share vs ${mLbl}. Revisar precio y exhibición en las salas con mayor caída.`});
+
+    // Precio
+    const puActual=pu1(data),puAnterior=pu1(dMoM);
+    const vpuA=vPct(puActual,puAnterior);
+    if(vpuA!==null&&vpuA>0.08&&dShM!==null&&dShM<0)consejos.push({tipo:'monitorear',icono:'👁️',txt:`Precio subió <strong>+${(vpuA*100).toFixed(1)}%</strong> y el share cayó — posible sensibilidad al precio. Evaluar impacto.`});
+
+    if(consejos.length>0){
+      html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">💡 Consejo estratégico</div>
+        ${consejos.map(c=>{
+          const bg=c.tipo==='defender'?'#FFFBEB':c.tipo==='atacar'?'#F0FDF4':c.tipo==='bien'?'#EFF6FF':'#F9FAFB';
+          const bc=c.tipo==='defender'?'#FDE68A':c.tipo==='atacar'?'#BBF7D0':c.tipo==='bien'?'#BFDBFE':'#E1E5EB';
+          const lc=c.tipo==='defender'?'#D97706':c.tipo==='atacar'?'#059669':c.tipo==='bien'?'#2563EB':'#8492A6';
+          return`<div style="background:${bg};border-left:3px solid ${lc};border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#1C2B4A">${c.icono} ${c.txt}</div>`;
+        }).join('')}
+      </div>`;
+    }
   }
 
-  als.sort((a,b)=>{if(a.seccion||b.seccion)return 0;return['danger','warning','info','success'].indexOf(a.t)-['danger','warning','info','success'].indexOf(b.t);});
+  if(!hC){
+    html=`<div style="background:#EFF6FF;border-radius:10px;padding:20px;text-align:center;font-size:13px;color:#1D4ED8">
+      Selecciona <strong>Año y Mes</strong> para ver el diagnóstico completo.
+    </div>`;
+  }
 
-  document.getElementById('a-kpis').innerHTML=`<div class="kpi red"><div class="kpi-lbl">Críticas</div><div class="kpi-val" style="color:#DC2626">${als.filter(a=>a.t==='danger').length}</div></div><div class="kpi gold"><div class="kpi-lbl">Advertencias</div><div class="kpi-val" style="color:#D97706">${als.filter(a=>a.t==='warning').length}</div></div><div class="kpi"><div class="kpi-lbl">Informativas</div><div class="kpi-val" style="color:#2563EB">${als.filter(a=>a.t==='info'&&!a.seccion).length}</div></div><div class="kpi green"><div class="kpi-lbl">Positivas</div><div class="kpi-val" style="color:#059669">${als.filter(a=>a.t==='success').length}</div></div>`;
+  // KPIs resumen arriba
+  document.getElementById('a-kpis').innerHTML=`
+    <div class="kpi red"><div class="kpi-lbl">Variación vol. MoM</div><div class="kpi-val" style="color:${vM!==null&&vM<0?'#DC2626':'#059669'};font-size:16px">${vM!==null?`${vM>0?'+':''}${(vM*100).toFixed(1)}%`:'—'}</div></div>
+    <div class="kpi gold"><div class="kpi-lbl">Variación vol. YoY</div><div class="kpi-val" style="color:${vY!==null&&vY<0?'#DC2626':'#059669'};font-size:16px">${vY!==null?`${vY>0?'+':''}${(vY*100).toFixed(1)}%`:'—'}</div></div>
+    <div class="kpi"><div class="kpi-lbl">Share actual</div><div class="kpi-val" style="font-size:16px">${shC.toFixed(2)}%</div></div>
+    <div class="kpi green"><div class="kpi-lbl">Δ Share MoM</div><div class="kpi-val" style="color:${dShM!==null&&dShM<0?'#DC2626':'#059669'};font-size:16px">${dShM!==null?`${dShM>0?'+':''}${dShM.toFixed(2)}pp`:'—'}</div></div>
+  `;
 
-  const acTag=ac=>({atk:'<span class="a-tag at-atk">⚔ Atacar</span>',def:'<span class="a-tag at-def">🛡 Defender</span>',mon:'<span class="a-tag at-mon">👁 Monitorear</span>'}[ac]||'');
-
-  document.getElementById('a-list').innerHTML=`<div class="a-list">${als.map(a=>{
-    if(a.seccion)return`<div style="font-size:9px;font-weight:700;letter-spacing:.1em;color:#8492A6;text-transform:uppercase;margin:14px 0 6px;display:flex;align-items:center;gap:8px">${a.ti}<span style="flex:1;height:1px;background:#E1E5EB;display:inline-block"></span></div>`;
-    if(!a.bo)return'';
-    return`<div class="a-card ${a.t}"><div class="a-icon">${a.t==='danger'?'🔴':a.t==='warning'?'🟡':a.t==='info'?'🔵':'🟢'}</div><div><div class="a-title">${a.ti}</div><div class="a-body">${a.bo}</div>${a.ac&&a.ac.length?`<div class="a-tags">${a.ac.map(acTag).join('')}</div>`:''}</div></div>`;
-  }).join('')}</div>`;
+  document.getElementById('a-list').innerHTML=html;
 }
 function renderAll(){
   requestAnimationFrame(()=>{
