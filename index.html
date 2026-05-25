@@ -862,25 +862,19 @@ function SK(){
 function A(){
   const an=gv('a-anno'),ms=gv('a-mes');
   const{a:mA,m:mM}=getMoM(an,ms),{a:yA}=getYoY(an,ms);
-  const fM=gv('a-marca'),fC=gv('a-calibre'),fS=gv('a-sku'),fSl=gv('a-sala'),fCat=gv('a-cat'),fDep=gv('a-dep'),fCatVC=gv('a-catvc');
+  const fM=gv('a-marca'),fSl=gv('a-sala'),fDep=gv('a-dep'),fCatVC=gv('a-catvc');
 
   const data=filtA(an,ms);
   const dMoM=filtA(mA,mM);
   const dYoY=filtA(yA,ms);
   const catC=filtCat(an,ms),catM=filtCat(mA,mM),catY=filtCat(yA,ms);
 
-  const mLbl=mA?`${MN[parseInt(mM)]} ${mA}`:'mes anterior';
-  const yLbl=yA?`${yA}`:'año anterior';
-  const mLblFull=mA?`MoM ${MN[parseInt(mM)]} ${mA}`:'MoM';
-  const yLblFull=yA?`YoY ${yA}`:'YoY';
-
-  const ctx=[];if(fM)ctx.push(fM);if(fC)ctx.push(fC);if(fS)ctx.push(fS);if(fSl)ctx.push(fSl);if(fCat)ctx.push(fCat);if(fDep)ctx.push(fDep);if(fCatVC)ctx.push(fCatVC);
-  const ctxL=ctx.length?ctx.join(' · '):'Todo el portafolio';
+  const mLbl=mA?`${MN[parseInt(mM)]} ${mA}`:'mes ant.';
+  const yLbl=yA?yA:'año ant.';
 
   const HL=d=>d.reduce((s,r)=>s+nv(r['Hectolitros']),0);
   const hC=HL(data),hP=HL(dMoM),hY=HL(dYoY);
   const hCatC=HL(catC),hCatM=HL(catM),hCatY=HL(catY);
-
   const vM=vPct(hC,hP),vY=vPct(hC,hY);
   const shC=hCatC>0?hC/hCatC*100:0;
   const shP=hCatM>0?hP/hCatM*100:null;
@@ -888,209 +882,323 @@ function A(){
   const dShM=shP!==null?shC-shP:null;
   const dShY=shY!==null?shC-shY:null;
 
+  if(!hC){
+    document.getElementById('a-kpis').innerHTML='';
+    document.getElementById('a-list').innerHTML=`<div style="background:#EFF6FF;border-radius:10px;padding:20px;text-align:center;font-size:13px;color:#1D4ED8">Selecciona <strong>Año y Mes</strong> para ver el diagnóstico.</div>`;
+    return;
+  }
+
+  document.getElementById('a-kpis').innerHTML='';
+
+  function secTitle(icon,txt){
+    return`<div style="font-size:10px;font-weight:700;letter-spacing:.1em;color:#1C2B4A;text-transform:uppercase;margin:18px 0 10px;display:flex;align-items:center;gap:8px">${icon} ${txt}<span style="flex:1;height:1px;background:#E1E5EB;display:inline-block;margin-left:4px"></span></div>`;
+  }
+
   let html='';
 
   // =====================================================
-  // SECCIÓN 1: RESUMEN EJECUTIVO MoM y YoY
+  // 1. RESUMEN
   // =====================================================
-  const resColor=vM!==null&&vM<-0.05?'#FEF2F2':vM!==null&&vM>0.05?'#F0FDF4':'#EFF6FF';
-  const resIconVol=vM===null?'📊':vM>0.05?'📈':vM<-0.05?'📉':'➡️';
-  const resIconSh=dShM===null?'🎯':dShM>0.5?'🏆':dShM<-0.5?'⚠️':'🎯';
-
-  html+=`<div style="background:${resColor};border-radius:10px;padding:16px 20px;margin-bottom:14px;border:1px solid #E1E5EB">
-    <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">📋 Resumen ejecutivo · ${ctxL}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px">
-      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
-        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">${resIconVol} Volumen actual</div>
-        <div style="font-size:20px;font-weight:700;color:#1C2B4A">${hC.toFixed(1)} Hl</div>
-        <div style="font-size:11px;margin-top:4px;color:${vM!==null&&vM>0?'#059669':'#DC2626'}">${vM!==null?`${vM>0?'▲ +':'▼ '}${Math.abs(vM*100).toFixed(1)}% vs ${mLbl}`:'Sin datos MoM'}</div>
-        <div style="font-size:11px;color:${vY!==null&&vY>0?'#059669':'#DC2626'}">${vY!==null?`${vY>0?'▲ +':'▼ '}${Math.abs(vY*100).toFixed(1)}% vs ${yLbl}`:'Sin datos YoY'}</div>
-      </div>
-      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
-        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">${resIconSh} Share en categoría</div>
-        <div style="font-size:20px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}%</div>
-        <div style="font-size:11px;margin-top:4px;color:${dShM!==null&&dShM>0?'#059669':'#DC2626'}">${dShM!==null?`${dShM>0?'▲ +':'▼ '}${Math.abs(dShM).toFixed(2)}pp vs ${mLbl}`:'Sin datos MoM'}</div>
-        <div style="font-size:11px;color:${dShY!==null&&dShY>0?'#059669':'#DC2626'}">${dShY!==null?`${dShY>0?'▲ +':'▼ '}${Math.abs(dShY).toFixed(2)}pp vs ${yLbl}`:'Sin datos YoY'}</div>
-      </div>
-      <div style="background:white;border-radius:8px;padding:12px 14px;border:1px solid #E1E5EB">
-        <div style="font-size:9px;font-weight:700;color:#8492A6;text-transform:uppercase;margin-bottom:4px">💰 Precio prom (Emp.1)</div>
-        <div style="font-size:20px;font-weight:700;color:#1C2B4A">Bs ${pu1(data).toFixed(2)}</div>
-        <div style="font-size:11px;margin-top:4px;color:#8492A6">vs ant: Bs ${pu1(dMoM).toFixed(2)}</div>
-        ${(()=>{const vpu=vPct(pu1(data),pu1(dMoM));return vpu!==null?`<div style="font-size:11px;color:${vpu>0?'#DC2626':'#059669'}">${vpu>0?'▲ +':'▼ '}${Math.abs(vpu*100).toFixed(1)}%</div>`:'';})()}
-      </div>
+  html+=secTitle('📊','Resumen Vs MoM y Vs YoY');
+  html+=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:4px">
+    <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Volumen MoM</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:22px;font-weight:700;color:#1C2B4A">${hC.toFixed(1)}</span><span style="font-size:12px;color:#8492A6">Hl</span>
+        <span style="font-size:14px;font-weight:700;color:${vM!==null&&vM<0?'#DC2626':vM!==null&&vM>0?'#059669':'#8492A6'}">${vM!==null?`${vM>0?'▲ +':'▼ '}${Math.abs(vM*100).toFixed(1)}%`:''}</span>
+      </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${hP.toFixed(1)} Hl</strong> · ${mLbl}</div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Volumen YoY</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:22px;font-weight:700;color:#1C2B4A">${hC.toFixed(1)}</span><span style="font-size:12px;color:#8492A6">Hl</span>
+        <span style="font-size:14px;font-weight:700;color:${vY!==null&&vY<0?'#DC2626':vY!==null&&vY>0?'#059669':'#8492A6'}">${vY!==null?`${vY>0?'▲ +':'▼ '}${Math.abs(vY*100).toFixed(1)}%`:''}</span>
+      </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${hY.toFixed(1)} Hl</strong> · ${yLbl}</div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Share vs MoM</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:22px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}</span><span style="font-size:12px;color:#8492A6">%</span>
+        <span style="font-size:14px;font-weight:700;color:${dShM!==null&&dShM<0?'#DC2626':dShM!==null&&dShM>0?'#059669':'#8492A6'}">${dShM!==null?`${dShM>0?'▲ +':'▼ '}${Math.abs(dShM).toFixed(2)}pp`:''}</span>
+      </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${shP!==null?shP.toFixed(2)+'%':'—'}</strong> · ${mLbl}</div>
+    </div>
+    <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Share vs YoY</div>
+      <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
+        <span style="font-size:22px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}</span><span style="font-size:12px;color:#8492A6">%</span>
+        <span style="font-size:14px;font-weight:700;color:${dShY!==null&&dShY<0?'#DC2626':dShY!==null&&dShY>0?'#059669':'#8492A6'}">${dShY!==null?`${dShY>0?'▲ +':'▼ '}${Math.abs(dShY).toFixed(2)}pp`:''}</span>
+      </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${shY!==null?shY.toFixed(2)+'%':'—'}</strong> · ${yLbl}</div>
     </div>
   </div>`;
 
   // =====================================================
-  // SECCIÓN 2: ANÁLISIS POR CALIBRE — share ganado/perdido + SKUs responsables
+  // Helper: tabla expandible Dimension > SKU
   // =====================================================
-  if(hC>0){
-    const pCal=grp(data,'Calibre'),mapCalM={},mapCalY={};
-    grp(dMoM,'Calibre').forEach(([c,v])=>mapCalM[c]=v);
-    grp(dYoY,'Calibre').forEach(([c,v])=>mapCalY[c]=v);
+  function expandTableDim(dimKey,prefix){
+    // Build index: dim -> { hl, hlMoM, hlYoY, skus: {sku: {hlC,hlP,hlY}} }
+    const idx={};
+    data.forEach(r=>{
+      const d=r[dimKey]||'Sin datos',sk=r['SKU']||r['DesProducto']||'Sin SKU';
+      if(!idx[d])idx[d]={hlC:0,hlP:0,hlY:0,skus:{}};
+      idx[d].hlC+=nv(r['Hectolitros']);
+      if(!idx[d].skus[sk])idx[d].skus[sk]={hlC:0,hlP:0};
+      idx[d].skus[sk].hlC+=nv(r['Hectolitros']);
+    });
+    dMoM.forEach(r=>{
+      const d=r[dimKey]||'Sin datos',sk=r['SKU']||r['DesProducto']||'Sin SKU';
+      if(!idx[d])idx[d]={hlC:0,hlP:0,hlY:0,skus:{}};
+      idx[d].hlP+=nv(r['Hectolitros']);
+      if(!idx[d].skus[sk])idx[d].skus[sk]={hlC:0,hlP:0};
+      idx[d].skus[sk].hlP+=nv(r['Hectolitros']);
+    });
+    dYoY.forEach(r=>{
+      const d=r[dimKey]||'Sin datos';
+      if(!idx[d])idx[d]={hlC:0,hlP:0,hlY:0,skus:{}};
+      idx[d].hlY+=nv(r['Hectolitros']);
+    });
 
-    let calRows='';
-    pCal.forEach(([cal,v])=>{
-      const shCalC=hC>0?v.hl/hC*100:0;
-      const shCalP=mapCalM[cal]&&hP>0?mapCalM[cal].hl/hP*100:null;
-      const dCal=shCalP!==null?shCalC-shCalP:null;
-      const trend=dCal!==null&&dCal>0.3?'▲':dCal!==null&&dCal<-0.3?'▼':'→';
-      const tColor=dCal!==null&&dCal>0.3?'#059669':dCal!==null&&dCal<-0.3?'#DC2626':'#8492A6';
-      // Top SKUs responsables
-      const skusCal=grp(data.filter(r=>r['Calibre']===cal),'SKU')||grp(data.filter(r=>r['Calibre']===cal),'DesProducto');
-      const topSKUs=skusCal.slice(0,2).map(([s])=>s.substring(0,25)).join(', ');
-      calRows+=`<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${cal}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${v.hl.toFixed(1)} Hl</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${shCalC.toFixed(1)}%</span></td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:${tColor};font-weight:700">${trend} ${dCal!==null?`${dCal>0?'+':''}${dCal.toFixed(2)}pp`:'—'}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-size:10px;color:#8492A6">${topSKUs||'—'}</td>
+    const entries=Object.entries(idx).sort((a,b)=>b[1].hlC-a[1].hlC);
+    let t=`<div style="overflow-x:auto"><table class="tbl">
+      <thead><tr><th>${dimKey==='Calibre'?'Calibre':'Empaque'} / SKU</th><th>Hl actual</th><th>Hl ${mLbl}</th><th>Dif. Hl</th><th>Var %</th><th>Hl ${yLbl}</th><th>Δ YoY</th></tr></thead><tbody>`;
+
+    entries.forEach(([d,v],di)=>{
+      const diff=v.hlP>0?v.hlC-v.hlP:null;
+      const varV=vPct(v.hlC,v.hlP);
+      const diffY=v.hlY>0?v.hlC-v.hlY:null;
+      const varY=vPct(v.hlC,v.hlY);
+      const cV=varV!==null&&varV>0?'#059669':varV!==null&&varV<0?'#DC2626':'#8492A6';
+      const cY=varY!==null&&varY>0?'#059669':varY!==null&&varY<0?'#DC2626':'#8492A6';
+      t+=`<tr class="tr0 tr-tog" onclick="toggleAlA('${prefix}${di}')">
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${d}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${v.hlC.toFixed(1)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${v.hlP>0?v.hlP.toFixed(1):'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${diff!==null?`${diff>0?'+':''}${diff.toFixed(1)} Hl`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${varV!==null?`${varV>0?'▲ +':'▼ '}${Math.abs(varV*100).toFixed(1)}%`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${v.hlY>0?v.hlY.toFixed(1):'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cY}">${diffY!==null?`${diffY>0?'+':''}${diffY.toFixed(1)} Hl`:'—'}</td>
+      </tr>`;
+      // SKU rows
+      Object.entries(v.skus).sort((a,b)=>b[1].hlC-a[1].hlC).forEach(([sk,sv])=>{
+        const skDiff=sv.hlP>0?sv.hlC-sv.hlP:null;
+        const skVar=vPct(sv.hlC,sv.hlP);
+        const skC=skVar!==null&&skVar>0?'#059669':skVar!==null&&skVar<0?'#DC2626':'#8492A6';
+        t+=`<tr class="${prefix}-child ${prefix}${di}-child tr1" style="display:none">
+          <td style="padding:7px 12px 7px 26px;border-bottom:1px solid #F4F5F7;font-size:11px">└ ${sk.substring(0,38)}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7">${sv.hlC.toFixed(1)}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${sv.hlP>0?sv.hlP.toFixed(1):'—'}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${skC}">${skDiff!==null?`${skDiff>0?'+':''}${skDiff.toFixed(1)} Hl`:'—'}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${skC}">${skVar!==null?`${skVar>0?'▲ +':'▼ '}${Math.abs(skVar*100).toFixed(1)}%`:'—'}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">—</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">—</td>
+        </tr>`;
+      });
+    });
+    t+=`</tbody></table></div>`;
+    return t;
+  }
+
+  // =====================================================
+  // 2. CALIBRE expandible
+  // =====================================================
+  html+=secTitle('📦','Calibre');
+  html+=`<div class="card" style="padding:14px">${expandTableDim('Calibre','cal')}</div>`;
+
+  // =====================================================
+  // 3. EMPAQUE expandible
+  // =====================================================
+  html+=secTitle('🏷️','Empaque');
+  html+=`<div class="card" style="padding:14px">${expandTableDim('Empaque','emp')}</div>`;
+
+  // =====================================================
+  // 4. COMPETENCIA — Hl actual, Hl MoM, Dif Hl, % diferencia
+  // =====================================================
+  html+=secTitle('⚔️','Competencia');
+  let catFiltrada='';
+  if(fM){
+    const rM=D.find(r=>r['Marca']===fM&&(an?String(r['Año'])===an:true)&&(ms?String(r['Mes'])===ms:true));
+    if(rM)catFiltrada=rM['Categoría Industria']||'';
+  }
+  const compBase=catFiltrada?D.filter(r=>{
+    if(an&&String(r['Año'])!==an)return false;if(ms&&String(r['Mes'])!==ms)return false;
+    if(fDep&&r['Departamento']!==fDep)return false;if(fSl&&r['Salas']!==fSl)return false;
+    if(fCatVC&&r['Categoria VC']!==fCatVC)return false;return r['Categoría Industria']===catFiltrada;
+  }):catC;
+  const compBaseMoM=catFiltrada?D.filter(r=>{
+    if(mA&&String(r['Año'])!==mA)return false;if(mM&&String(r['Mes'])!==mM)return false;
+    if(fDep&&r['Departamento']!==fDep)return false;if(fSl&&r['Salas']!==fSl)return false;
+    if(fCatVC&&r['Categoria VC']!==fCatVC)return false;return r['Categoría Industria']===catFiltrada;
+  }):catM;
+
+  const marcasComp=grp(compBase,'Marca');
+  const mapMarcaM={};grp(compBaseMoM,'Marca').forEach(([m,v])=>mapMarcaM[m]=v);
+  const infoCateg=catFiltrada?`<div style="font-size:11px;color:#8492A6;margin-bottom:10px">Categoría: <strong>${catFiltrada}</strong>${fCatVC?' · '+fCatVC:''}</div>`:'';
+  const compRows2=marcasComp.map(([m,v])=>{
+    const hlAnt=mapMarcaM[m]?mapMarcaM[m].hl:null;
+    const diffHl=hlAnt!==null?v.hl-hlAnt:null;
+    const varV=vPct(v.hl,hlAnt);
+    return{m,hlC:v.hl,hlAnt,diffHl,varV};
+  }).sort((a,b)=>b.hlC-a.hlC);
+
+  // Calcular share para competencia — expandible por Calibre
+  const hCompC=HL(compBase),hCompM=HL(compBaseMoM);
+  // Build index marca > calibre para competencia
+  const compIdx={},compIdxM={};
+  compBase.forEach(r=>{
+    const m2=r['Marca']||'?',cal2=r['Calibre']||'Sin cal';
+    if(!compIdx[m2])compIdx[m2]={hlC:0,cal:{}};
+    compIdx[m2].hlC+=nv(r['Hectolitros']);
+    if(!compIdx[m2].cal[cal2])compIdx[m2].cal[cal2]={hlC:0};
+    compIdx[m2].cal[cal2].hlC+=nv(r['Hectolitros']);
+  });
+  compBaseMoM.forEach(r=>{
+    const m2=r['Marca']||'?',cal2=r['Calibre']||'Sin cal';
+    if(!compIdxM[m2])compIdxM[m2]={hlP:0,cal:{}};
+    compIdxM[m2].hlP+=nv(r['Hectolitros']);
+    if(!compIdxM[m2].cal[cal2])compIdxM[m2].cal[cal2]={hlP:0};
+    compIdxM[m2].cal[cal2].hlP+=nv(r['Hectolitros']);
+  });
+  const compRowsShare=Object.entries(compIdx).map(([m2,v])=>{
+    const shMC=hCompC>0?v.hlC/hCompC*100:0;
+    const hlP2=compIdxM[m2]?compIdxM[m2].hlP:null;
+    const shMP=hCompM>0&&hlP2!==null?hlP2/hCompM*100:null;
+    const diffSh=shMP!==null?shMC-shMP:null;
+    return{m:m2,shMC,shMP,diffSh,hlC:v.hlC,hlP:hlP2,cal:v.cal};
+  }).sort((a,b)=>a.shMC-b.shMC);
+
+  let compHtml=`<div style="overflow-x:auto"><table class="tbl">
+    <thead><tr><th>Marca / Calibre</th><th>Share actual</th><th>Share ${mLbl}</th><th>Δ Share</th></tr></thead><tbody>`;
+  compRowsShare.forEach((r,ri)=>{
+    const esPropia=fM&&r.m===fM;
+    const cS=r.diffSh!==null&&r.diffSh>0?'#059669':r.diffSh!==null&&r.diffSh<0?'#DC2626':'#8492A6';
+    const cpid=`comp${ri}`;
+    compHtml+=`<tr class="tr0 tr-tog" onclick="toggleAlA('${cpid}')" style="${esPropia?'background:#EFF6FF;':''}">
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${esPropia?'★ ':''}${r.m}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${r.shMC.toFixed(1)}%</span></td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${r.shMP!==null?r.shMP.toFixed(1)+'%':'—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cS}">${r.diffSh!==null?`${r.diffSh>0?'▲ +':'▼ '}${Math.abs(r.diffSh).toFixed(2)}pp`:'—'}</td>
+    </tr>`;
+    // Calibre rows
+    Object.entries(r.cal).sort((a,b)=>b[1].hlC-a[1].hlC).forEach(([cal2,cv2])=>{
+      const calP=compIdxM[r.m]&&compIdxM[r.m].cal[cal2]?compIdxM[r.m].cal[cal2].hlP:null;
+      const shCalC=hCompC>0?cv2.hlC/hCompC*100:0;
+      const shCalP=hCompM>0&&calP!==null?calP/hCompM*100:null;
+      const dCalSh=shCalP!==null?shCalC-shCalP:null;
+      const cCal=dCalSh!==null&&dCalSh>0?'#059669':dCalSh!==null&&dCalSh<0?'#DC2626':'#8492A6';
+      compHtml+=`<tr class="${cpid}-child tr1" style="display:none">
+        <td style="padding:7px 12px 7px 26px;border-bottom:1px solid #F4F5F7;font-size:11px">└ ${cal2}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${shCalC.toFixed(1)}%</span></td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${shCalP!==null?shCalP.toFixed(1)+'%':'—'}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cCal}">${dCalSh!==null?`${dCalSh>0?'▲ +':'▼ '}${Math.abs(dCalSh).toFixed(2)}pp`:'—'}</td>
       </tr>`;
     });
+  });
+  compHtml+=`</tbody></table></div>`;
+  html+=`<div class="card" style="padding:14px">${infoCateg}${compHtml}</div>`;
 
-    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">📦 Calibre · Ganadores y perdedores de share vs ${mLbl}</div>
-      <div style="overflow-x:auto"><table class="tbl">
-        <thead><tr><th>Calibre</th><th>Volumen</th><th>Share %</th><th>Δ vs ${mLbl}</th><th>SKUs principales</th></tr></thead>
-        <tbody>${calRows}</tbody>
-      </table></div>
-    </div>`;
+  // =====================================================
+  // 5. PRECIOS expandible Calibre > SKU
+  // =====================================================
+  html+=secTitle('💰','Precios · Empaque 1');
+  const precCalT={},precCalTM={};
+  data.filter(r=>String(r['Empaque'])==='1').forEach(r=>{
+    const cal=r['Calibre']||'Sin cal',sku=r['SKU']||r['DesProducto']||'Sin SKU';
+    if(!precCalT[cal])precCalT[cal]={ing:0,qty:0,skus:{}};
+    precCalT[cal].ing+=nv(r['Ingreso (Bs)']);precCalT[cal].qty+=nv(r['QtyVnt']);
+    if(!precCalT[cal].skus[sku])precCalT[cal].skus[sku]={ing:0,qty:0};
+    precCalT[cal].skus[sku].ing+=nv(r['Ingreso (Bs)']);precCalT[cal].skus[sku].qty+=nv(r['QtyVnt']);
+  });
+  dMoM.filter(r=>String(r['Empaque'])==='1').forEach(r=>{
+    const cal=r['Calibre']||'Sin cal',sku=r['SKU']||r['DesProducto']||'Sin SKU';
+    if(!precCalTM[cal])precCalTM[cal]={ing:0,qty:0,skus:{}};
+    precCalTM[cal].ing+=nv(r['Ingreso (Bs)']);precCalTM[cal].qty+=nv(r['QtyVnt']);
+    if(!precCalTM[cal].skus[sku])precCalTM[cal].skus[sku]={ing:0,qty:0};
+    precCalTM[cal].skus[sku].ing+=nv(r['Ingreso (Bs)']);precCalTM[cal].skus[sku].qty+=nv(r['QtyVnt']);
+  });
+  function movP(pu,puP){
+    if(!puP||puP===0)return{tag:'<span class="tag t-gray">Sin ant.</span>'};
+    const v2=vPct(pu,puP);
+    if(v2>0.02)return{tag:`<span class="tag t-red">↑ +${(v2*100).toFixed(1)}%</span>`};
+    if(v2<-0.02)return{tag:`<span class="tag t-green">↓ −${Math.abs(v2*100).toFixed(1)}%</span>`};
+    return{tag:'<span class="tag t-gray">→ Estable</span>'};
   }
-
-  // =====================================================
-  // SECCIÓN 3: COMPETENCIA — a quién le quitaste share o quién te lo quitó
-  // =====================================================
-  if(hC>0&&hCatC>0){
-    // Marcas en la categoría completa (sin filtro marca)
-    const todasMarcasC=grp(catC,'Marca');
-    const todasMarcasM=grp(catM,'Marca');
-    const mapTMM={};todasMarcasM.forEach(([m,v])=>mapTMM[m]=v);
-    const compRows=[];
-    todasMarcasC.forEach(([m,v])=>{
-      if(fM&&m===fM)return; // excluir la propia marca si está filtrada
-      const shMC=hCatC>0?v.hl/hCatC*100:0;
-      const shMP=mapTMM[m]&&hCatM>0?mapTMM[m].hl/hCatM*100:null;
-      const dM=shMP!==null?shMC-shMP:null;
-      compRows.push({m,shMC,dM});
+  let precH=`<div style="overflow-x:auto"><table class="tbl">
+  <thead><tr><th>Calibre / SKU</th><th>Precio actual</th><th>Precio ${mLbl}</th><th>Movimiento</th></tr></thead><tbody>`;
+  Object.entries(precCalT).forEach(([cal,cv],ci)=>{
+    const cPU=cv.qty>0?cv.ing/cv.qty:0;
+    const cM=precCalTM[cal];const cPUP=cM&&cM.qty>0?cM.ing/cM.qty:0;
+    const{tag:cTag}=movP(cPU,cPUP);
+    const pid=`palA${ci}`;
+    precH+=`<tr class="tr0 tr-tog" onclick="toggleAlA('${pid}')">
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${cal}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">Bs ${cPU.toFixed(2)}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${cPUP>0?'Bs '+cPUP.toFixed(2):'—'}</td>
+      <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${cTag}</td>
+    </tr>`;
+    Object.entries(cv.skus).sort((a,b)=>b[1].ing-a[1].ing).forEach(([sku,sv],si)=>{
+      const skPU=sv.qty>0?sv.ing/sv.qty:0;
+      const skM=cM&&cM.skus&&cM.skus[sku];const skPUP=skM&&skM.qty>0?skM.ing/skM.qty:0;
+      const{tag:skTag}=movP(skPU,skPUP);
+      precH+=`<tr class="${pid}-child tr1" style="display:none">
+        <td style="padding:7px 12px 7px 26px;border-bottom:1px solid #F4F5F7;font-size:11px">└ ${sku.substring(0,40)}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7">Bs ${skPU.toFixed(2)}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${skPUP>0?'Bs '+skPUP.toFixed(2):'—'}</td>
+        <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7">${skTag}</td>
+      </tr>`;
     });
-    compRows.sort((a,b)=>b.shMC-a.shMC);
-    const ganadoresComp=compRows.filter(x=>x.dM!==null&&x.dM>0.3).sort((a,b)=>b.dM-a.dM).slice(0,5);
-    const perdedoresComp=compRows.filter(x=>x.dM!==null&&x.dM<-0.3).sort((a,b)=>a.dM-b.dM).slice(0,5);
-
-    const insight=dShM!==null&&dShM<-0.5&&ganadoresComp.length>0
-      ?`<div style="background:#FEF2F2;border-left:3px solid #DC2626;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#991B1B">⚠️ Perdiste <strong>${Math.abs(dShM).toFixed(2)}pp</strong> de share. Las marcas que más crecieron: <strong>${ganadoresComp.slice(0,2).map(x=>x.m).join(', ')}</strong>.</div>`
-      :dShM!==null&&dShM>0.5&&perdedoresComp.length>0
-      ?`<div style="background:#F0FDF4;border-left:3px solid #059669;border-radius:0 6px 6px 0;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#065F46">🏆 Ganaste <strong>+${dShM.toFixed(2)}pp</strong> de share. Las marcas que más cayeron: <strong>${perdedoresComp.slice(0,2).map(x=>x.m).join(', ')}</strong>.</div>`
-      :'';
-
-    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:10px">⚔️ Competencia · Movimientos de share en la categoría</div>
-      ${insight}
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        <div>
-          <div style="font-size:10px;font-weight:700;color:#059669;margin-bottom:6px">▲ Marcas que ganaron share</div>
-          ${ganadoresComp.length?ganadoresComp.map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F4F5F7;font-size:11px"><span style="font-weight:600">${x.m}</span><span class="tag t-green">+${x.dM.toFixed(2)}pp</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:6px 0">Sin datos</div>'}
-        </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;color:#DC2626;margin-bottom:6px">▼ Marcas que perdieron share</div>
-          ${perdedoresComp.length?perdedoresComp.map(x=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #F4F5F7;font-size:11px"><span style="font-weight:600">${x.m}</span><span class="tag t-red">${x.dM.toFixed(2)}pp</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:6px 0">Sin datos</div>'}
-        </div>
-      </div>
-    </div>`;
-  }
+  });
+  precH+=`</tbody></table></div>`;
+  html+=`<div class="card" style="padding:14px">${precH}</div>`;
 
   // =====================================================
-  // SECCIÓN 4: SALAS — quién cayó y quién creció vs MoM
+  // 6. SALAS — sin % del total
   // =====================================================
-  if(hC>0){
-    const pSala=grp(data,'Salas'),mapSM={};
-    grp(dMoM,'Salas').forEach(([s,v])=>mapSM[s]=v);
-    const salaRows=pSala.map(([s,v])=>{
-      const prev=mapSM[s];
-      const dv=prev?vPct(v.hl,prev.hl):null;
-      const shS=hC>0?v.hl/hC*100:0;
-      const trend=dv!==null&&dv>0.05?'▲':dv!==null&&dv<-0.05?'▼':'→';
-      const tColor=dv!==null&&dv>0.05?'#059669':dv!==null&&dv<-0.05?'#DC2626':'#8492A6';
-      return{s,hl:v.hl,shS,prev:prev?prev.hl:null,dv,trend,tColor};
-    });
-
-    html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">🏪 Salas · Performance vs ${mLbl}</div>
-      <div style="overflow-x:auto"><table class="tbl">
-        <thead><tr><th>Sala</th><th>Hl actual</th><th>Hl ${mLbl}</th><th>Variación</th><th>% del total</th><th>Tendencia</th></tr></thead>
-        <tbody>${salaRows.map(r=>`<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${r.s}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${r.hl.toFixed(1)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${r.prev!==null?r.prev.toFixed(1):'—'}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:${r.tColor};font-weight:700">${r.dv!==null?`${r.trend} ${r.dv>0?'+':''}${(r.dv*100).toFixed(1)}%`:'—'}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${r.shS.toFixed(1)}%</span></td>
-          <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-size:18px">${r.dv!==null&&r.dv>0.05?'🟢':r.dv!==null&&r.dv<-0.05?'🔴':'🟡'}</td>
-        </tr>`).join('')}</tbody>
-      </table></div>
-    </div>`;
-  }
+  html+=secTitle('🏪','Salas · Estrategia');
+  const pSala=grp(data,'Salas'),mapSMx={};
+  grp(dMoM,'Salas').forEach(([s,v])=>mapSMx[s]=v);
+  html+=`<div class="card" style="padding:14px"><div style="overflow-x:auto"><table class="tbl">
+    <thead><tr><th>Sala</th><th>Hl actual</th><th>Hl ${mLbl}</th><th>Dif. Hl</th><th>Var %</th><th>Estrategia</th></tr></thead>
+    <tbody>${pSala.map(([s,v])=>{
+      const prev=mapSMx[s];const hlAnt=prev?prev.hl:null;
+      const diffHl=hlAnt!==null?v.hl-hlAnt:null;const varS=vPct(v.hl,hlAnt);
+      const cV=varS!==null&&varS>0?'#059669':varS!==null&&varS<0?'#DC2626':'#8492A6';
+      let accion,aTag;
+      if(varS!==null&&varS>0.08){accion='⚔️ Atacar';aTag='t-green';}
+      else if(varS!==null&&varS<-0.08){accion='🛡️ Defender';aTag='t-red';}
+      else{accion='✓ Mantener';aTag='t-amber';}
+      return`<tr>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${s}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">${v.hl.toFixed(1)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${hlAnt!==null?hlAnt.toFixed(1):'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${diffHl!==null?`${diffHl>0?'+':''}${diffHl.toFixed(1)} Hl`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${varS!==null?`${varS>0?'▲ +':'▼ '}${Math.abs(varS*100).toFixed(1)}%`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag ${aTag}">${accion}</span></td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div></div>`;
 
   // =====================================================
-  // SECCIÓN 5: CONSEJO ESTRATÉGICO
+  // 7. INTELIGENCIA
   // =====================================================
-  if(hC>0){
-    const consejos=[];
-
-    // Qué defender
-    const salasCayendo=grp(data,'Salas').filter(([s,v])=>{
-      const prev=grp(dMoM,'Salas').find(([sm])=>sm===s);
-      return prev&&vPct(v.hl,prev[1].hl)<-0.1;
-    });
-    if(salasCayendo.length>0)consejos.push({tipo:'defender',icono:'🛡️',txt:`Reforzar presencia en <strong>${salasCayendo.slice(0,2).map(([s])=>s).join(', ')}</strong> — salas con caída significativa.`});
-
-    // Dónde atacar
-    const salasSubiendo=grp(data,'Salas').filter(([s,v])=>{
-      const prev=grp(dMoM,'Salas').find(([sm])=>sm===s);
-      return prev&&vPct(v.hl,prev[1].hl)>0.1;
-    });
-    if(salasSubiendo.length>0)consejos.push({tipo:'atacar',icono:'⚔️',txt:`Capitalizar el crecimiento en <strong>${salasSubiendo.slice(0,2).map(([s])=>s).join(', ')}</strong> — salas con momentum positivo.`});
-
-    // Calibre que mejor anduvo
-    const topCal=grp(data,'Calibre')[0];
-    if(topCal)consejos.push({tipo:'bien',icono:'✅',txt:`El calibre <strong>${topCal[0]}</strong> es tu mayor volumen (${topCal[1].hl.toFixed(1)} Hl). Asegura su disponibilidad y precio competitivo.`});
-
-    // Share general
-    if(dShM!==null&&dShM>0.5)consejos.push({tipo:'bien',icono:'🏆',txt:`Ganaste <strong>+${dShM.toFixed(2)}pp</strong> de share vs ${mLbl}. Mantén la estrategia actual — está funcionando.`});
-    if(dShM!==null&&dShM<-0.5)consejos.push({tipo:'defender',icono:'⚠️',txt:`Perdiste <strong>${Math.abs(dShM).toFixed(2)}pp</strong> de share vs ${mLbl}. Revisar precio y exhibición en las salas con mayor caída.`});
-
-    // Precio
-    const puActual=pu1(data),puAnterior=pu1(dMoM);
-    const vpuA=vPct(puActual,puAnterior);
-    if(vpuA!==null&&vpuA>0.08&&dShM!==null&&dShM<0)consejos.push({tipo:'monitorear',icono:'👁️',txt:`Precio subió <strong>+${(vpuA*100).toFixed(1)}%</strong> y el share cayó — posible sensibilidad al precio. Evaluar impacto.`});
-
-    if(consejos.length>0){
-      html+=`<div style="background:white;border-radius:10px;border:1px solid #E1E5EB;padding:16px;margin-bottom:14px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:12px">💡 Consejo estratégico</div>
-        ${consejos.map(c=>{
-          const bg=c.tipo==='defender'?'#FFFBEB':c.tipo==='atacar'?'#F0FDF4':c.tipo==='bien'?'#EFF6FF':'#F9FAFB';
-          const bc=c.tipo==='defender'?'#FDE68A':c.tipo==='atacar'?'#BBF7D0':c.tipo==='bien'?'#BFDBFE':'#E1E5EB';
-          const lc=c.tipo==='defender'?'#D97706':c.tipo==='atacar'?'#059669':c.tipo==='bien'?'#2563EB':'#8492A6';
-          return`<div style="background:${bg};border-left:3px solid ${lc};border-radius:0 8px 8px 0;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#1C2B4A">${c.icono} ${c.txt}</div>`;
-        }).join('')}
-      </div>`;
-    }
-  }
-
-  if(!hC){
-    html=`<div style="background:#EFF6FF;border-radius:10px;padding:20px;text-align:center;font-size:13px;color:#1D4ED8">
-      Selecciona <strong>Año y Mes</strong> para ver el diagnóstico completo.
-    </div>`;
-  }
-
-  // KPIs resumen arriba
-  document.getElementById('a-kpis').innerHTML=`
-    <div class="kpi red"><div class="kpi-lbl">Variación vol. MoM</div><div class="kpi-val" style="color:${vM!==null&&vM<0?'#DC2626':'#059669'};font-size:16px">${vM!==null?`${vM>0?'+':''}${(vM*100).toFixed(1)}%`:'—'}</div></div>
-    <div class="kpi gold"><div class="kpi-lbl">Variación vol. YoY</div><div class="kpi-val" style="color:${vY!==null&&vY<0?'#DC2626':'#059669'};font-size:16px">${vY!==null?`${vY>0?'+':''}${(vY*100).toFixed(1)}%`:'—'}</div></div>
-    <div class="kpi"><div class="kpi-lbl">Share actual</div><div class="kpi-val" style="font-size:16px">${shC.toFixed(2)}%</div></div>
-    <div class="kpi green"><div class="kpi-lbl">Δ Share MoM</div><div class="kpi-val" style="color:${dShM!==null&&dShM<0?'#DC2626':'#059669'};font-size:16px">${dShM!==null?`${dShM>0?'+':''}${dShM.toFixed(2)}pp`:'—'}</div></div>
-  `;
+  html+=secTitle('💡','Inteligencia · Propuesta');
+  const propuestas=[];
+  if(dShM!==null&&dShM>0.5)propuestas.push(`Tu share subió <strong>+${dShM.toFixed(2)}pp</strong> vs ${mLbl}. Identifica en qué calibres y salas fue el mayor aporte y refuérzalos.`);
+  if(dShM!==null&&dShM<-0.5)propuestas.push(`Perdiste <strong>${Math.abs(dShM).toFixed(2)}pp</strong> de share vs ${mLbl}. Revisa los calibres y salas con mayor caída antes de tomar acciones de precio.`);
+  if(dShM===null||Math.abs(dShM||0)<0.5)propuestas.push(`Share estable vs ${mLbl}. Momento para explorar crecimiento en salas con potencial sin descuidar las actuales.`);
+  const vpuA=vPct(pu1(data),pu1(dMoM));
+  if(vpuA!==null&&vpuA>0.05&&dShM!==null&&dShM<0)propuestas.push(`El precio subió <strong>+${(vpuA*100).toFixed(1)}%</strong> y el share cayó — evalúa si el alza afecta el volumen.`);
+  if(vpuA!==null&&vpuA>0.05&&dShM!==null&&dShM>0)propuestas.push(`Subiste precio <strong>+${(vpuA*100).toFixed(1)}%</strong> y el share creció — tu marca tiene espacio para sostener el precio.`);
+  const salasCayendo=pSala.filter(([s,v])=>{const p=mapSMx[s];return p&&vPct(v.hl,p.hl)<-0.1;});
+  const salasSubiendo=pSala.filter(([s,v])=>{const p=mapSMx[s];return p&&vPct(v.hl,p.hl)>0.1;});
+  if(salasSubiendo.length>0)propuestas.push(`Capitaliza el crecimiento en <strong>${salasSubiendo.slice(0,3).map(([s])=>s).join(', ')}</strong>.`);
+  if(salasCayendo.length>0)propuestas.push(`Prioriza recuperar presencia en <strong>${salasCayendo.slice(0,3).map(([s])=>s).join(', ')}</strong>.`);
+  const rivalGana=compRows2.filter(r=>(!fM||r.m!==fM)&&r.varV!==null&&r.varV>0.1).sort((a,b)=>b.diffHl-a.diffHl).slice(0,2);
+  if(rivalGana.length>0)propuestas.push(`<strong>${rivalGana.map(r=>r.m).join(', ')}</strong> ganaron volumen este mes. Analiza su estrategia en las salas donde más crecieron.`);
+  html+=`<div class="card" style="padding:16px">${propuestas.map((p,i)=>`<div style="display:flex;gap:12px;align-items:flex-start;padding:10px 0;${i<propuestas.length-1?'border-bottom:1px solid #F4F5F7':''}"><div style="width:24px;height:24px;background:#1C2B4A;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0;margin-top:2px">${i+1}</div><div style="font-size:12px;color:#1C2B4A;line-height:1.6">${p}</div></div>`).join('')}</div>`;
 
   document.getElementById('a-list').innerHTML=html;
+}
+
+function toggleAlA(pid){
+  const rows=document.querySelectorAll(`.${pid}-child`);
+  if(!rows.length)return;
+  const hide=rows[0].style.display==='none'||rows[0].style.display==='';
+  rows.forEach(r=>r.style.display=hide?'table-row':'none');
 }
 function renderAll(){
   requestAnimationFrame(()=>{
