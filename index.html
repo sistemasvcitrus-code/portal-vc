@@ -920,13 +920,13 @@ function A(){
     <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Share vs MoM</div>
       <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
         <span style="font-size:22px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}</span><span style="font-size:12px;color:#8492A6">%</span>
-        <span style="font-size:14px;font-weight:700;color:${dShM!==null&&dShM<0?'#DC2626':dShM!==null&&dShM>0?'#059669':'#8492A6'}">${dShM!==null?`${dShM>0?'▲ +':'▼ '}${Math.abs(dShM).toFixed(2)}pp`:''}</span>
+        <span style="font-size:14px;font-weight:700;color:${dShM!==null&&dShM<0?'#DC2626':dShM!==null&&dShM>0?'#059669':'#8492A6'}">${dShM!==null?`${dShM>0?'+':''}${dShM.toFixed(2)}%`:''}</span>
       </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${shP!==null?shP.toFixed(2)+'%':'—'}</strong> · ${mLbl}</div>
     </div>
     <div class="card" style="margin-bottom:0"><div class="kpi-lbl">Share vs YoY</div>
       <div style="display:flex;align-items:baseline;gap:6px;margin-top:4px">
         <span style="font-size:22px;font-weight:700;color:#1C2B4A">${shC.toFixed(2)}</span><span style="font-size:12px;color:#8492A6">%</span>
-        <span style="font-size:14px;font-weight:700;color:${dShY!==null&&dShY<0?'#DC2626':dShY!==null&&dShY>0?'#059669':'#8492A6'}">${dShY!==null?`${dShY>0?'▲ +':'▼ '}${Math.abs(dShY).toFixed(2)}pp`:''}</span>
+        <span style="font-size:14px;font-weight:700;color:${dShY!==null&&dShY<0?'#DC2626':dShY!==null&&dShY>0?'#059669':'#8492A6'}">${dShY!==null?`${dShY>0?'+':''}${dShY.toFixed(2)}%`:''}</span>
       </div><div style="font-size:11px;color:#8492A6;margin-top:2px">Ant: <strong>${shY!==null?shY.toFixed(2)+'%':'—'}</strong> · ${yLbl}</div>
     </div>
   </div>`;
@@ -935,7 +935,6 @@ function A(){
   // Helper: tabla expandible Dimension > SKU
   // =====================================================
   function expandTableDim(dimKey,prefix){
-    // Build index: dim -> { hl, hlMoM, hlYoY, skus: {sku: {hlC,hlP,hlY}} }
     const idx={};
     data.forEach(r=>{
       const d=r[dimKey]||'Sin datos',sk=r['SKU']||r['DesProducto']||'Sin SKU';
@@ -958,38 +957,48 @@ function A(){
     });
 
     const entries=Object.entries(idx).sort((a,b)=>b[1].hlC-a[1].hlC);
+    // Share totals for this dimension
+    const totC=entries.reduce((s,[,v])=>s+v.hlC,0);
+    const totP=entries.reduce((s,[,v])=>s+v.hlP,0);
+
     let t=`<div style="overflow-x:auto"><table class="tbl">
-      <thead><tr><th>${dimKey==='Calibre'?'Calibre':'Empaque'} / SKU</th><th>Hl actual</th><th>Hl ${mLbl}</th><th>Dif. Hl</th><th>Var %</th><th>Hl ${yLbl}</th><th>Δ YoY</th></tr></thead><tbody>`;
+      <thead><tr>
+        <th>${dimKey==='Calibre'?'Calibre':'Empaque'} / SKU</th>
+        <th>Vol. actual (Hl)</th><th>Vol. ${mLbl} (Hl)</th><th>Dif. Vol</th>
+        <th>Share actual</th><th>Share ${mLbl}</th><th>Dif. Share</th>
+      </tr></thead><tbody>`;
 
     entries.forEach(([d,v],di)=>{
-      const diff=v.hlP>0?v.hlC-v.hlP:null;
-      const varV=vPct(v.hlC,v.hlP);
-      const diffY=v.hlY>0?v.hlC-v.hlY:null;
-      const varY=vPct(v.hlC,v.hlY);
-      const cV=varV!==null&&varV>0?'#059669':varV!==null&&varV<0?'#DC2626':'#8492A6';
-      const cY=varY!==null&&varY>0?'#059669':varY!==null&&varY<0?'#DC2626':'#8492A6';
+      const diffHl=v.hlP>0?v.hlC-v.hlP:null;
+      const shC2=totC>0?v.hlC/totC*100:0;
+      const shP2=totP>0?v.hlP/totP*100:null;
+      const diffSh=shP2!==null?shC2-shP2:null;
+      const cV=diffHl!==null&&diffHl>0?'#059669':diffHl!==null&&diffHl<0?'#DC2626':'#8492A6';
+      const cS=diffSh!==null&&diffSh>0?'#059669':diffSh!==null&&diffSh<0?'#DC2626':'#8492A6';
       t+=`<tr class="tr0 tr-tog" onclick="toggleAlA('${prefix}${di}')">
         <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${d}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${v.hlC.toFixed(1)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${v.hlP>0?v.hlP.toFixed(1):'—'}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${diff!==null?`${diff>0?'+':''}${diff.toFixed(1)} Hl`:'—'}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${varV!==null?`${varV>0?'▲ +':'▼ '}${Math.abs(varV*100).toFixed(1)}%`:'—'}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${v.hlY>0?v.hlY.toFixed(1):'—'}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cY}">${diffY!==null?`${diffY>0?'+':''}${diffY.toFixed(1)} Hl`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cV}">${diffHl!==null?`${diffHl>0?'+':''}${diffHl.toFixed(1)} Hl`:'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${shC2.toFixed(1)}%</span></td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${shP2!==null?shP2.toFixed(1)+'%':'—'}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${cS}">${diffSh!==null?`${diffSh>0?'+':''}${diffSh.toFixed(2)}%`:'—'}</td>
       </tr>`;
-      // SKU rows
       Object.entries(v.skus).sort((a,b)=>b[1].hlC-a[1].hlC).forEach(([sk,sv])=>{
         const skDiff=sv.hlP>0?sv.hlC-sv.hlP:null;
-        const skVar=vPct(sv.hlC,sv.hlP);
-        const skC=skVar!==null&&skVar>0?'#059669':skVar!==null&&skVar<0?'#DC2626':'#8492A6';
+        const skShC=totC>0?sv.hlC/totC*100:0;
+        const skShP=totP>0?sv.hlP/totP*100:null;
+        const skDiffSh=skShP!==null?skShC-skShP:null;
+        const skC=skDiff!==null&&skDiff>0?'#059669':skDiff!==null&&skDiff<0?'#DC2626':'#8492A6';
+        const skCS=skDiffSh!==null&&skDiffSh>0?'#059669':skDiffSh!==null&&skDiffSh<0?'#DC2626':'#8492A6';
         t+=`<tr class="${prefix}-child ${prefix}${di}-child tr1" style="display:none">
           <td style="padding:7px 12px 7px 26px;border-bottom:1px solid #F4F5F7;font-size:11px">└ ${sk.substring(0,38)}</td>
           <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7">${sv.hlC.toFixed(1)}</td>
           <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${sv.hlP>0?sv.hlP.toFixed(1):'—'}</td>
           <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${skC}">${skDiff!==null?`${skDiff>0?'+':''}${skDiff.toFixed(1)} Hl`:'—'}</td>
-          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${skC}">${skVar!==null?`${skVar>0?'▲ +':'▼ '}${Math.abs(skVar*100).toFixed(1)}%`:'—'}</td>
-          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">—</td>
-          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">—</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7"><span class="tag t-blue">${skShC.toFixed(1)}%</span></td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">${skShP!==null?skShP.toFixed(1)+'%':'—'}</td>
+          <td style="padding:7px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:${skCS}">${skDiffSh!==null?`${skDiffSh>0?'+':''}${skDiffSh.toFixed(2)}%`:'—'}</td>
         </tr>`;
       });
     });
