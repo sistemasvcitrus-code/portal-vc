@@ -651,13 +651,17 @@ function R(){
   const semRows=pM.slice(0,20).map(([m,v])=>{
     const sC=hC>0?v.hl/hC*100:0,sP=mapM[m]&&hMt>0?mapM[m].hl/hMt*100:null,sY=mapY[m]&&hYt>0?mapY[m].hl/hYt*100:null;
     const dMv=sP!==null?sC-sP:null,dYv=sY!==null?sC-sY:null;
-    const ind=dMv!==null&&dMv>0.3?'up':dMv!==null&&dMv<-0.3?'dn':'fl';
+    // Semáforo: verde si gana share, rojo si pierde, amarillo si estable
+    let semEmoji;
+    if(dMv!==null&&dMv>0.3)semEmoji='🟢';
+    else if(dMv!==null&&dMv<-0.3)semEmoji='🔴';
+    else semEmoji='🟡';
     const momTxt=dMv!==null?`<span class="sem-d ${dMv>0.05?'up':dMv<-0.05?'dn':'fl2'}">${dMv>0?'▲':'▼'} ${Math.abs(dMv).toFixed(2)}pp</span>`:'<span class="sem-d fl2">—</span>';
     const yoyTxt=dYv!==null?`<span class="sem-d ${dYv>0.05?'up':dYv<-0.05?'dn':'fl2'}">${dYv>0?'▲':'▼'} ${Math.abs(dYv).toFixed(2)}pp</span>`:'<span class="sem-d fl2">—</span>';
     const aw=(v.hl/(pM[0]?pM[0][1].hl:1)*100).toFixed(1);
-    return`<tr><td style="width:20px"><span class="sem-indicator ${ind}"></span></td><td><span class="sem-name">${m}</span></td><td><span class="sem-pct">${sC.toFixed(1)}%</span></td><td>${momTxt}</td><td>${yoyTxt}</td><td><div class="bar-row"><div class="bar-bg" style="min-width:80px"><div class="bar-fg" style="width:${aw}%"></div></div><span style="font-size:10px;color:#8492A6;margin-left:6px">${v.hl.toFixed(1)} Hl</span></div></td></tr>`;
+    return`<tr><td style="text-align:center;padding:8px 12px;border-bottom:1px solid #F4F5F7;font-size:22px;line-height:1">${semEmoji}</td><td><span class="sem-name">${m}</span></td><td><span class="sem-pct">${sC.toFixed(1)}%</span></td><td>${momTxt}</td><td>${yoyTxt}</td><td><div class="bar-row"><div class="bar-bg" style="min-width:80px"><div class="bar-fg" style="width:${aw}%"></div></div><span style="font-size:10px;color:#8492A6;margin-left:6px">${v.hl.toFixed(1)} Hl</span></div></td></tr>`;
   }).join('');
-  document.getElementById('r-sem').innerHTML=`<table class="sem-tbl"><thead><tr><th></th><th>Marca</th><th>Share %</th><th>vs ${mL}</th><th>vs ${yL}</th><th>Volumen</th></tr></thead><tbody>${semRows}</tbody></table>`;
+  document.getElementById('r-sem').innerHTML=`<table class="sem-tbl"><thead><tr><th style="width:50px;text-align:center">🚦</th><th>Marca</th><th>Share %</th><th>vs ${mL}</th><th>vs ${yL}</th><th>Volumen</th></tr></thead><tbody>${semRows}</tbody></table>`;
   const gp=pM.map(([m,v])=>{const sC=hC>0?v.hl/hC*100:0;const sP=mapM[m]&&hMt>0?mapM[m].hl/hMt*100:null;return{m,sC,d:sP!==null?sC-sP:null};}).filter(x=>x.d!==null);
   const gan=gp.filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
   const per=gp.filter(x=>x.d<0).sort((a,b)=>a.d-b.d).slice(0,5);
