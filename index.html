@@ -699,7 +699,7 @@ function initFilters(){
         sab=uniq('Sabor'),cal=uniq('Calibre'),sku=uniq('SKU').slice(0,300),
         catvc=uniq('Categoria VC');
   ['r','s','t','sl','sk','a','ppt'].forEach(p=>{
-    if(p==='t'){initAnnoDrop(p,an);initMesDrop(p,ms);}else{fillAnnoSel(p+'-anno',an);fillMesSel(p+'-mes',ms);}
+    if(p==='t'||p==='ppt'){initAnnoDrop(p,an);initMesDrop(p,ms);}else{fillAnnoSel(p+'-anno',an);fillMesSel(p+'-mes',ms);}
     fillSel(p+'-cat',ca);fillSel(p+'-sala',sa);
     if(document.getElementById(p+'-marca-drop'))initMarcaDrop(p,ma);else fillSel(p+'-marca',ma);
     fillSel(p+'-ind',ind);
@@ -2109,17 +2109,19 @@ function exportPage(btn){
 
 // ===== PPT =====
 function filtPPT(dep){
-  // Filter using ppt filters + optional dept
   var _an=getAnnoSel('ppt'),_ms=getMesSel('ppt');
   var cat=gv('ppt-cat'),catvc=gv('ppt-catvc');
-  return D.filter(function(r){
-    if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)return false;
-    if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)return false;
-    if(cat&&r['Categoría Industria']!==cat)return false;
-    if(catvc&&r['Categoria VC']!==catvc)return false;
-    if(dep&&r['Departamento']!==dep)return false;
-    return true;
-  });
+  var result=[];
+  for(var j=0;j<D.length;j++){
+    var r=D[j];
+    if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)continue;
+    if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)continue;
+    if(cat&&r['Categoría Industria']!==cat)continue;
+    if(catvc&&r['Categoria VC']!==catvc)continue;
+    if(dep&&r['Departamento']!==dep)continue;
+    result.push(r);
+  }
+  return result;
 }
 function buildShareChart(canvasId,legId,tblId,data){
   if(!data.length)return;
@@ -2174,10 +2176,22 @@ function PPT(){
 function _doPPT(){
   if(!D.length)return;
   try{
-    var nat=filtPPT('');
-    var sc=filtPPT('SANTA CRUZ');
-    var cbba=filtPPT('COCHABAMBA');
-    var lpaz=filtPPT('LA PAZ');
+    // Single pass through D to split by dept
+    var _an=getAnnoSel('ppt'),_ms=getMesSel('ppt');
+    var cat=gv('ppt-cat'),catvc=gv('ppt-catvc');
+    var nat=[],sc=[],cbba=[],lpaz=[];
+    for(var j=0;j<D.length;j++){
+      var r=D[j];
+      if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)continue;
+      if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)continue;
+      if(cat&&r['Categoría Industria']!==cat)continue;
+      if(catvc&&r['Categoria VC']!==catvc)continue;
+      nat.push(r);
+      var dep=r['Departamento']||'';
+      if(dep==='SANTA CRUZ')sc.push(r);
+      else if(dep==='COCHABAMBA')cbba.push(r);
+      else if(dep==='LA PAZ')lpaz.push(r);
+    }
     buildShareChart('ppt-share-nat','ppt-share-nat-leg','ppt-share-nat-tbl',nat);
     buildShareChart('ppt-share-sc','ppt-share-sc-leg','ppt-share-sc-tbl',sc);
     buildPrecioTable('ppt-precio-nat',nat);
