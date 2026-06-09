@@ -163,8 +163,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .vc-progress-fill{height:100%;width:0%;background:#F59E0B;border-radius:4px;transition:width .4s ease}
 .vc-toast{position:fixed;bottom:28px;right:28px;background:#059669;color:white;padding:13px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);transform:translateY(80px);opacity:0;transition:all .4s ease}
 .vc-toast.show{transform:translateY(0);opacity:1}
-.ppt-slide{page-break-inside:avoid;break-inside:avoid}
-@media print{.side,.filters{display:none!important}.page{display:block!important;padding:10px}.ppt-slide{margin:0 0 20px 0}}
 </style>
 </head>
 <body>
@@ -201,7 +199,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="nav-item" onclick="go('salas',this)"><span class="nav-icon">⊞</span>Salas</div>
     <div class="nav-item" onclick="go('skus',this)"><span class="nav-icon">≡</span>SKUs</div>
     <div class="nav-item" onclick="go('alertas',this)"><span class="nav-icon">◉</span>Alertas</div>
-    <div class="nav-item" onclick="go('ppt',this)"><span class="nav-icon">▣</span>PPT</div>
     <div class="side-foot">
       <button class="upload-btn" onclick="document.getElementById('fileIn').click()">↑ Cargar Excel</button>
       <div class="file-info" id="fileInfo">Sin archivo</div>
@@ -501,51 +498,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div style="overflow-x:auto" id="ac-tbl"></div>
         </div>
       </div>
-    
-    <!-- PPT -->
-    <div class="page" id="pg-ppt">
-      <div class="ph">
-        <div class="ph-label">REPORTERÍA</div>
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div class="ph-title">PPT — Informe Mensual</div>
-          <button onclick="exportPPTPage()" style="background:#1C2B4A;color:white;border:none;border-radius:7px;font-size:11px;padding:7px 16px;cursor:pointer;font-weight:600">⬇ Exportar PDF</button>
-        </div>
-      </div>
-      <div class="filters" style="margin-bottom:16px">
-        <span class="fl">Año</span><div class="mes-wrap"><button class="mes-btn" id="ppt-anno-btn" onclick="toggleAnno('ppt')">Todos</button><div class="mes-drop" id="ppt-anno-drop"><label><input type="checkbox" id="ppt-anno-all" onchange="annoAll('ppt',this)" checked><strong>Todos</strong></label></div></div>
-        <div class="fdiv"></div>
-        <span class="fl">Mes</span><div class="mes-wrap"><button class="mes-btn" id="ppt-mes-btn" onclick="toggleMes('ppt')">Todos</button><div class="mes-drop" id="ppt-mes-drop"><label><input type="checkbox" id="ppt-mes-all" onchange="mesAll('ppt',this)" checked><strong>Todos</strong></label></div></div>
-        <div class="fdiv"></div>
-        <span class="fl">Categoría</span><select id="ppt-cat" onchange="PPT()"><option value="">Todas</option></select>
-        <div class="fdiv"></div>
-        <span class="fl">Cat. VC</span><select id="ppt-catvc" onchange="PPT()"><option value="">Todas</option></select>
-        <button onclick="clr('ppt')" class="clr-btn" title="Limpiar filtros">✕</button>
-      </div>
-      <div class="card" id="ppt-slide1">
-        <div class="card-title">📊 Evolución Share % · Nacional</div>
-        <div style="position:relative;height:280px"><canvas id="ppt-share-nat"></canvas></div>
-        <div class="leg" id="ppt-share-nat-leg" style="margin-top:8px"></div>
-        <div style="overflow-x:auto;margin-top:12px" id="ppt-share-nat-tbl"></div>
-      </div>
-      <div class="card" style="margin-top:14px" id="ppt-slide2">
-        <div class="card-title">📊 Evolución Share % · Santa Cruz</div>
-        <div style="position:relative;height:280px"><canvas id="ppt-share-sc"></canvas></div>
-        <div class="leg" id="ppt-share-sc-leg" style="margin-top:8px"></div>
-        <div style="overflow-x:auto;margin-top:12px" id="ppt-share-sc-tbl"></div>
-      </div>
-      <div class="card" style="margin-top:14px" id="ppt-slide3">
-        <div class="card-title">💰 Precio/u Emp.1 · Nacional</div>
-        <div style="overflow-x:auto" id="ppt-precio-nat"></div>
-      </div>
-      <div class="card" style="margin-top:14px" id="ppt-slide4">
-        <div class="card-title">💰 Precio/u Emp.1 · Cochabamba</div>
-        <div style="overflow-x:auto" id="ppt-precio-cbba"></div>
-      </div>
-      <div class="card" style="margin-top:14px" id="ppt-slide5">
-        <div class="card-title">💰 Precio/u Emp.1 · La Paz</div>
-        <div style="overflow-x:auto" id="ppt-precio-lpaz"></div>
-      </div>
-    </div></div>
+    </div>
 
   </div>
 </div>
@@ -698,8 +651,8 @@ function initFilters(){
         ind=uniq('Industria'),dep=uniq('Departamento'),emp=uniq('Empaque'),
         sab=uniq('Sabor'),cal=uniq('Calibre'),sku=uniq('SKU').slice(0,300),
         catvc=uniq('Categoria VC');
-  ['r','s','t','sl','sk','a','ppt'].forEach(p=>{
-    if(p==='t'||p==='ppt'){initAnnoDrop(p,an);initMesDrop(p,ms);}else{fillAnnoSel(p+'-anno',an);fillMesSel(p+'-mes',ms);}
+  ['r','s','t','sl','sk','a'].forEach(p=>{
+    if(p==='t'){initAnnoDrop(p,an);initMesDrop(p,ms);}else{fillAnnoSel(p+'-anno',an);fillMesSel(p+'-mes',ms);}
     fillSel(p+'-cat',ca);fillSel(p+'-sala',sa);
     if(document.getElementById(p+'-marca-drop'))initMarcaDrop(p,ma);else fillSel(p+'-marca',ma);
     fillSel(p+'-ind',ind);
@@ -2108,110 +2061,12 @@ function exportPage(btn){
 }
 
 // ===== PPT =====
-function filtPPT(dep){
-  var _an=getAnnoSel('ppt'),_ms=getMesSel('ppt');
-  var cat=gv('ppt-cat'),catvc=gv('ppt-catvc');
-  var result=[];
-  for(var j=0;j<D.length;j++){
-    var r=D[j];
-    if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)continue;
-    if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)continue;
-    if(cat&&r['Categoría Industria']!==cat)continue;
-    if(catvc&&r['Categoria VC']!==catvc)continue;
-    if(dep&&r['Departamento']!==dep)continue;
-    result.push(r);
-  }
-  return result;
-}
-function buildShareChart(canvasId,legId,tblId,data){
-  if(!data.length)return;
-  var meses=getMeses(data);
-  var mLs=meses.map(function(m){var p=m.split('-');return MN[parseInt(p[1])]+' '+p[0].slice(2);});
-  var marcas=grp(data,'Marca').map(function(e){return e[0];});
-  var ds=marcas.map(function(m,i){return{label:m,data:meses.map(function(ms){var p=ms.split('-'),y=p[0],mo=p[1];var md=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo));});var tot=md.reduce(function(s,r){return s+nv(r['Hectolitros']);},0);var dHL=md.filter(function(r){return r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return tot>0?parseFloat((dHL/tot*100).toFixed(1)):null;}),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true};});
-  mkC(canvasId,{type:'line',data:{labels:mLs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:16}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:function(v){return v+'%';},font:{size:9},color:'#8492A6'}}}}});
-  var leg=document.getElementById(legId);
-  if(leg)leg.innerHTML=marcas.map(function(m,i){return'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>';}).join('');
-  // Build table grouped by year
-  var tbl=document.getElementById(tblId);if(!tbl)return;
-  var years=[...new Set(meses.map(function(m){return m.split('-')[0];}))].sort();
-  var ht='<table class="tbl" style="font-size:11px"><thead><tr><th>Año/Mes</th>'+marcas.map(function(m){return'<th>'+m+'</th>';}).join('')+'</tr></thead><tbody>';
-  years.forEach(function(yr,yi){
-    var yMeses=meses.filter(function(m){return m.split('-')[0]===yr;});
-    var pid='psh'+canvasId+yi;
-    var yTot=data.filter(function(r){return String(r['Año'])===yr;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
-    ht+='<tr class="tr0 tr-tog" id="'+pid+'" onclick="togAlA(this.id)" style="background:#F4F5F7"><td style="padding:6px 12px;font-weight:700">▶ '+yr+'</td>'+marcas.map(function(m){var dHL=data.filter(function(r){return String(r['Año'])===yr&&r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return'<td style="padding:6px 10px;font-weight:600">'+(yTot>0?(dHL/yTot*100).toFixed(1)+'%':'—')+'</td>';}).join('')+'</tr>';
-    yMeses.forEach(function(ms){
-      var p=ms.split('-'),y=p[0],mo=p[1];var mLbl=MN[parseInt(mo)];
-      var mTot=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo));}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
-      ht+='<tr class="'+pid+'-child tr1" style="display:none"><td style="padding:5px 12px 5px 22px">'+mLbl+'</td>'+marcas.map(function(m){var dHL=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return'<td style="padding:5px 10px">'+(mTot>0?(dHL/mTot*100).toFixed(1)+'%':'—')+'</td>';}).join('')+'</tr>';
-    });
-  });
-  ht+='</tbody></table>';
-  tbl.innerHTML=ht;
-}
-function buildPrecioTable(elId,data){
-  var el=document.getElementById(elId);if(!el||!data.length){if(el)el.innerHTML='<div style="color:#8492A6;padding:12px">Sin datos</div>';return;}
-  var dE1=data.filter(function(r){return String(r['Empaque'])==='1';});
-  if(!dE1.length){el.innerHTML='<div style="color:#8492A6;padding:12px">Sin datos Empaque 1</div>';return;}
-  var marcas=grp(dE1,'Marca').map(function(e){return e[0];});
-  var meses=getMeses(dE1);
-  var ht='<table class="tbl" style="font-size:11px"><thead><tr><th>Marca</th>'+meses.map(function(ms){var p=ms.split('-');return'<th>'+MN[parseInt(p[1])]+' '+p[0].slice(2)+'</th>';}).join('')+'<th>Movim.</th></tr></thead><tbody>';
-  marcas.forEach(function(m){
-    var pus=meses.map(function(ms){var p=ms.split('-'),y=p[0],mo=p[1];var md=dE1.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&r['Marca']===m;});var q=md.reduce(function(s,r){return s+nv(r['QtyVnt']);},0),g=md.reduce(function(s,r){return s+nv(r['Ingreso (Bs)']);},0);return q>0?g/q:null;});
-    var lastPu=null,prevPu=null;
-    for(var k=pus.length-1;k>=0;k--){if(pus[k]!==null){if(lastPu===null)lastPu=pus[k];else if(prevPu===null){prevPu=pus[k];break;}}}
-    var mov='→';var mCol='#8492A6';
-    if(lastPu!==null&&prevPu!==null){if(lastPu>prevPu+0.05){mov='↑ Subió';mCol='#DC2626';}else if(lastPu<prevPu-0.05){mov='↓ Bajó';mCol='#059669';}else{mov='→ Estable';mCol='#8492A6';}}
-    ht+='<tr><td style="padding:6px 12px;font-weight:600">'+m+'</td>'+pus.map(function(pu){return'<td style="padding:6px 10px">'+(pu!==null?'Bs '+pu.toFixed(2):'—')+'</td>';}).join('')+'<td style="padding:6px 12px;font-weight:700;color:'+mCol+'">'+mov+'</td></tr>';
-  });
-  ht+='</tbody></table>';
-  el.innerHTML=ht;
-}
-let _pptTimer=0;
-function PPT(){
-  clearTimeout(_pptTimer);
-  _pptTimer=setTimeout(_doPPT,200);
-}
-function _doPPT(){
-  if(!D.length)return;
-  try{
-    // Single pass through D to split by dept
-    var _an=getAnnoSel('ppt'),_ms=getMesSel('ppt');
-    var cat=gv('ppt-cat'),catvc=gv('ppt-catvc');
-    var nat=[],sc=[],cbba=[],lpaz=[];
-    for(var j=0;j<D.length;j++){
-      var r=D[j];
-      if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)continue;
-      if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)continue;
-      if(cat&&r['Categoría Industria']!==cat)continue;
-      if(catvc&&r['Categoria VC']!==catvc)continue;
-      nat.push(r);
-      var dep=r['Departamento']||'';
-      if(dep==='SANTA CRUZ')sc.push(r);
-      else if(dep==='COCHABAMBA')cbba.push(r);
-      else if(dep==='LA PAZ')lpaz.push(r);
-    }
-    buildShareChart('ppt-share-nat','ppt-share-nat-leg','ppt-share-nat-tbl',nat);
-    buildShareChart('ppt-share-sc','ppt-share-sc-leg','ppt-share-sc-tbl',sc);
-    buildPrecioTable('ppt-precio-nat',nat);
-    buildPrecioTable('ppt-precio-cbba',cbba);
-    buildPrecioTable('ppt-precio-lpaz',lpaz);
-  }catch(e){console.error('PPT error:',e);}
-}
-function exportPPTPage(){
-  var allPages=document.querySelectorAll('.page');
-  var side=document.querySelector('.side');
-  allPages.forEach(function(p){p.style.display=p.id==='pg-ppt'?'block':'none';});
-  if(side)side.style.display='none';
-  document.title='Valencia Citrus · Informe PPT';
-  window.print();
-  setTimeout(function(){
-    allPages.forEach(function(p){p.style.display='';});
-    if(side)side.style.display='';
-    document.title='Valencia Citrus — Market Share';
-  },1000);
-}
+
+
+
+
+
+
 
 function renderAll(){
   requestAnimationFrame(()=>{
