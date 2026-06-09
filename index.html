@@ -152,9 +152,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sec{font-size:10px;font-weight:700;letter-spacing:.1em;color:#1C2B4A;text-transform:uppercase;margin:18px 0 10px;display:flex;align-items:center;gap:8px}
 .sec::after{content:'';flex:1;height:1px;background:#E1E5EB;display:inline-block;margin-left:4px}
 @media(max-width:700px){.c2,.c3,.gp-grid{grid-template-columns:1fr}.side{width:170px}.page{padding:16px}}
+
+.vc-overlay{display:none;position:fixed;inset:0;background:rgba(28,43,74,0.88);z-index:9999;flex-direction:column;align-items:center;justify-content:center;gap:0}
+.vc-overlay.show{display:flex}
+.vc-spin{width:52px;height:52px;border:5px solid rgba(255,255,255,.2);border-top-color:#F59E0B;border-radius:50%;animation:vcspin .8s linear infinite;margin-bottom:20px}
+@keyframes vcspin{to{transform:rotate(360deg)}}
+.vc-load-title{font-size:16px;font-weight:700;color:#F9FAFB;margin-bottom:6px;letter-spacing:.01em}
+.vc-load-sub{font-size:12px;color:#94A3B8;margin-bottom:18px}
+.vc-progress-bar{width:220px;height:4px;background:rgba(255,255,255,.15);border-radius:4px;overflow:hidden}
+.vc-progress-fill{height:100%;width:0%;background:#F59E0B;border-radius:4px;transition:width .4s ease}
+.vc-toast{position:fixed;bottom:28px;right:28px;background:#059669;color:white;padding:13px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);transform:translateY(80px);opacity:0;transition:all .4s ease}
+.vc-toast.show{transform:translateY(0);opacity:1}
+.ppt-slide{page-break-inside:avoid;break-inside:avoid}
+@media print{.side,.filters{display:none!important}.page{display:block!important;padding:10px}.ppt-slide{margin:0 0 20px 0}}
 </style>
 </head>
 <body>
+<div class="vc-overlay" id="vcOverlay">
+  <div class="vc-spin"></div>
+  <div class="vc-load-title" id="vcLoadTitle">Procesando archivo…</div>
+  <div class="vc-load-sub" id="vcLoadSub">Leyendo filas, por favor espera</div>
+  <div class="vc-progress-bar"><div class="vc-progress-fill" id="vcProgress"></div></div>
+</div>
+<div class="vc-toast" id="vcToast">✅ ¡Listo! Base cargada correctamente</div>
 <div class="login-wrap" id="lw">
   <div class="login-card">
     <div class="login-logo">📊</div>
@@ -181,6 +201,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="nav-item" onclick="go('salas',this)"><span class="nav-icon">⊞</span>Salas</div>
     <div class="nav-item" onclick="go('skus',this)"><span class="nav-icon">≡</span>SKUs</div>
     <div class="nav-item" onclick="go('alertas',this)"><span class="nav-icon">◉</span>Alertas</div>
+    <div class="nav-item" onclick="go('ppt',this)"><span class="nav-icon">▣</span>PPT</div>
     <div class="side-foot">
       <button class="upload-btn" onclick="document.getElementById('fileIn').click()">↑ Cargar Excel</button>
       <div class="file-info" id="fileInfo">Sin archivo</div>
@@ -247,6 +268,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="overflow-x:auto" id="r-gl"></div>
       </div>
 
+      <!-- COMPARATIVO -->
+      <div class="card" style="margin-top:14px">
+        <div class="card-title">Análisis comparativo</div>
+        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:16px">
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Métrica</div>
+            <div class="dims" style="margin-bottom:0">
+              <button class="db on" onclick="setCompMetric('Hectolitros',this)">Hl</button>
+              <button class="db" onclick="setCompMetric('QtyVnt',this)">Unidades</button>
+              <button class="db" onclick="setCompMetric('Ingreso (Bs)',this)">Bs</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">★ Marca base</div>
+            <select id="comp-sel-base" onchange="compBase=this.value" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1.5px solid #F59E0B;background:#FFFBEB;color:#92400E;font-weight:700;cursor:pointer;outline:none">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Comparar con A</div>
+            <select id="comp-sel-a" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1px solid #E1E5EB;background:#F9FAFB;color:#1C2B4A;font-weight:600;cursor:pointer;outline:none">
+              <option value="">Seleccionar...</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Comparar con B</div>
+            <select id="comp-sel-b" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1px solid #E1E5EB;background:#F9FAFB;color:#1C2B4A;font-weight:600;cursor:pointer;outline:none">
+              <option value="">Ninguna</option>
+            </select>
+          </div>
+          <button onclick="renderComp()" class="db on" style="font-size:12px;padding:7px 20px">Comparar</button>
+        </div>
+        <div style="overflow-x:auto" id="t-comp-tbl"></div>
+      </div>
+
     </div>
 
     <!-- TENDENCIA -->
@@ -289,7 +345,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
             <span class="fl">Empaque</span>
             <select id="t-precio-emp" onchange="renderTPrecio()" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid #E1E5EB;background:#FEF9C3;font-weight:700;color:#92400E">
               <option value="1">1</option>
-              <option value="">Todos</option>
             </select>
           </div>
         </div>
@@ -315,40 +370,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="leg" id="p-pvol-leg" style="margin-top:10px"></div>
       </div>
 
-      <!-- COMPARATIVO -->
-      <div class="card" style="margin-top:14px">
-        <div class="card-title">Análisis comparativo</div>
-        <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;margin-bottom:16px">
-          <div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Métrica</div>
-            <div class="dims" style="margin-bottom:0">
-              <button class="db on" onclick="setCompMetric('Hectolitros',this)">Hl</button>
-              <button class="db" onclick="setCompMetric('QtyVnt',this)">Unidades</button>
-              <button class="db" onclick="setCompMetric('Ingreso (Bs)',this)">Bs</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">★ Marca base</div>
-            <select id="comp-sel-base" onchange="compBase=this.value" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1.5px solid #F59E0B;background:#FFFBEB;color:#92400E;font-weight:700;cursor:pointer;outline:none">
-              <option value="">Seleccionar...</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Comparar con A</div>
-            <select id="comp-sel-a" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1px solid #E1E5EB;background:#F9FAFB;color:#1C2B4A;font-weight:600;cursor:pointer;outline:none">
-              <option value="">Seleccionar...</option>
-            </select>
-          </div>
-          <div>
-            <div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">Comparar con B</div>
-            <select id="comp-sel-b" style="font-size:12px;padding:6px 10px;border-radius:5px;border:1px solid #E1E5EB;background:#F9FAFB;color:#1C2B4A;font-weight:600;cursor:pointer;outline:none">
-              <option value="">Ninguna</option>
-            </select>
-          </div>
-          <button onclick="renderComp()" class="db on" style="font-size:12px;padding:7px 20px">Comparar</button>
-        </div>
-        <div style="overflow-x:auto" id="t-comp-tbl"></div>
-      </div>
+
 
       <div class="kpi-row" id="t-kpis"></div>
             <div id="t-ins"></div>
@@ -439,7 +461,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <span class="fl">Categoría</span><select id="a-cat" onchange="refreshMarcaDrop('a');A()"><option value="">Todas</option></select><div class="fdiv"></div>
         <span class="fl">Cat. VC</span><select id="a-catvc" onchange="refreshMarcaDrop('a');A()"><option value="">Todas</option></select><div class="fdiv"></div>
         <span class="fl">Sala</span><select id="a-sala" onchange="refreshMarcaDrop('a');A()"><option value="">Todas</option></select><div class="fdiv"></div>
-        <span class="fl">Marca</span><div class="mes-wrap"><button class="mes-btn" id="a-marca-btn" onclick="toggleMarca('a')" style="border-color:#E1E5EB">Todas</button><div class="mes-drop" id="a-marca-drop"><label><input type="checkbox" id="a-marca-all" onchange="marcaAll('a',this)" checked><strong>Todas</strong></label></div></div><div class="fdiv"></div>
+        <span class="fl">Marca</span><select id="a-marca" onchange="A()"><option value="">Todas</option></select><div class="fdiv"></div>
         <span class="fl">Calibre</span><select id="a-calibre" onchange="A()"><option value="">Todos</option></select><div class="fdiv"></div>
         <span class="fl">SKU</span><select id="a-sku" onchange="A()"><option value="">Todos</option></select>
         <button class="btn-clr" onclick="clr('a')">✕</button>
@@ -479,7 +501,51 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div style="overflow-x:auto" id="ac-tbl"></div>
         </div>
       </div>
-    </div>
+    
+    <!-- PPT -->
+    <div class="page" id="pg-ppt">
+      <div class="ph">
+        <div class="ph-label">REPORTERÍA</div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div class="ph-title">PPT — Informe Mensual</div>
+          <button onclick="exportPPTPage()" style="background:#1C2B4A;color:white;border:none;border-radius:7px;font-size:11px;padding:7px 16px;cursor:pointer;font-weight:600">⬇ Exportar PDF</button>
+        </div>
+      </div>
+      <div class="filters" style="margin-bottom:16px">
+        <span class="fl">Año</span><div class="mes-wrap"><button class="mes-btn" id="ppt-anno-btn" onclick="toggleAnno('ppt')">Todos</button><div class="mes-drop" id="ppt-anno-drop"><label><input type="checkbox" id="ppt-anno-all" onchange="annoAll('ppt',this)" checked><strong>Todos</strong></label></div></div>
+        <div class="fdiv"></div>
+        <span class="fl">Mes</span><div class="mes-wrap"><button class="mes-btn" id="ppt-mes-btn" onclick="toggleMes('ppt')">Todos</button><div class="mes-drop" id="ppt-mes-drop"><label><input type="checkbox" id="ppt-mes-all" onchange="mesAll('ppt',this)" checked><strong>Todos</strong></label></div></div>
+        <div class="fdiv"></div>
+        <span class="fl">Categoría</span><select id="ppt-cat" onchange="PPT()"><option value="">Todas</option></select>
+        <div class="fdiv"></div>
+        <span class="fl">Cat. VC</span><select id="ppt-catvc" onchange="PPT()"><option value="">Todas</option></select>
+        <button onclick="clr('ppt')" class="clr-btn" title="Limpiar filtros">✕</button>
+      </div>
+      <div class="card" id="ppt-slide1">
+        <div class="card-title">📊 Evolución Share % · Nacional</div>
+        <div style="position:relative;height:280px"><canvas id="ppt-share-nat"></canvas></div>
+        <div class="leg" id="ppt-share-nat-leg" style="margin-top:8px"></div>
+        <div style="overflow-x:auto;margin-top:12px" id="ppt-share-nat-tbl"></div>
+      </div>
+      <div class="card" style="margin-top:14px" id="ppt-slide2">
+        <div class="card-title">📊 Evolución Share % · Santa Cruz</div>
+        <div style="position:relative;height:280px"><canvas id="ppt-share-sc"></canvas></div>
+        <div class="leg" id="ppt-share-sc-leg" style="margin-top:8px"></div>
+        <div style="overflow-x:auto;margin-top:12px" id="ppt-share-sc-tbl"></div>
+      </div>
+      <div class="card" style="margin-top:14px" id="ppt-slide3">
+        <div class="card-title">💰 Precio/u Emp.1 · Nacional</div>
+        <div style="overflow-x:auto" id="ppt-precio-nat"></div>
+      </div>
+      <div class="card" style="margin-top:14px" id="ppt-slide4">
+        <div class="card-title">💰 Precio/u Emp.1 · Cochabamba</div>
+        <div style="overflow-x:auto" id="ppt-precio-cbba"></div>
+      </div>
+      <div class="card" style="margin-top:14px" id="ppt-slide5">
+        <div class="card-title">💰 Precio/u Emp.1 · La Paz</div>
+        <div style="overflow-x:auto" id="ppt-precio-lpaz"></div>
+      </div>
+    </div></div>
 
   </div>
 </div>
@@ -502,11 +568,32 @@ document.getElementById('fileIn').addEventListener('change',e=>{
   document.getElementById('fileInfo').textContent=f.name;
   const r=new FileReader();
   r.onload=e=>{
-    const wb=XLSX.read(e.target.result,{type:'binary'});
-    const ws=wb.Sheets['base de portal']||wb.Sheets[wb.SheetNames[0]];
-    D=XLSX.utils.sheet_to_json(ws,{defval:''});
-    const ud=document.getElementById('uploadDrop');if(ud)ud.style.display='none';
-    initFilters();renderAll();
+    // Show loading overlay
+    const ov=document.getElementById('vcOverlay');
+    const prog=document.getElementById('vcProgress');
+    const sub=document.getElementById('vcLoadSub');
+    if(ov)ov.classList.add('show');
+    if(prog)prog.style.width='20%';
+    setTimeout(()=>{
+      if(sub)sub.textContent='Procesando '+D.length+' registros…';
+      if(prog)prog.style.width='50%';
+      const wb=XLSX.read(e.target.result,{type:'binary'});
+      if(prog)prog.style.width='70%';
+      const ws=wb.Sheets['base de portal']||wb.Sheets[wb.SheetNames[0]];
+      D=XLSX.utils.sheet_to_json(ws,{defval:''});
+      if(sub)sub.textContent='Cargados '+D.length+' registros. Inicializando…';
+      if(prog)prog.style.width='85%';
+      const ud=document.getElementById('uploadDrop');if(ud)ud.style.display='none';
+      initFilters();
+      if(prog)prog.style.width='95%';
+      renderAll();
+      if(prog)prog.style.width='100%';
+      setTimeout(()=>{
+        if(ov)ov.classList.remove('show');
+        const t=document.getElementById('vcToast');
+        if(t){t.textContent='✅ ¡Listo! '+D.length.toLocaleString()+' registros cargados';t.classList.add('show');setTimeout(()=>t.classList.remove('show'),4000);}
+      },300);
+    },30);
   };
   r.readAsBinaryString(f);
 });
@@ -530,7 +617,15 @@ function fillAnnoSel(id,vals){
   sorted.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;s.appendChild(o);});
   if(cur)s.value=cur;
 }
-function getAnnoVal(p){const sel=getAnnoSel(p);return sel.length===1?sel[0]:'';};
+function getAnnoVal(p){
+  const drop=document.getElementById(p+'-anno-drop');
+  if(drop){
+    const all=drop.querySelectorAll('input:not(#'+p+'-anno-all)');
+    const ch=[...all].filter(c=>c.checked).map(c=>c.value);
+    return ch.length===1?ch[0]:'';
+  }
+  return gv(p+'-anno');
+}
 
 // ===== MULTI-SELECT MES =====
 function toggleMes(p){
@@ -572,8 +667,9 @@ function getMesSel(p){
 }
 function trigRender(p){
   if(D.length)refreshMarcaDrop(p);
-  if(p==='r')R();else if(p==='s')S();else if(p==='t')T();
-  else if(p==='p'){sP();P();}else if(p==='sl')SL();else if(p==='sk')SK();else if(p==='a')A();
+  if(p==='r')R();else if(p==='t')T();
+  else if(p==='p'){sP();P();}else if(p==='sl')SL();else if(p==='sk')SK();
+  else if(p==='a')A();else if(p==='ppt')PPT();
 }
 function initMesDrop(p,meses){
   const drop=document.getElementById(p+'-mes-drop');if(!drop)return;
@@ -602,9 +698,11 @@ function initFilters(){
         ind=uniq('Industria'),dep=uniq('Departamento'),emp=uniq('Empaque'),
         sab=uniq('Sabor'),cal=uniq('Calibre'),sku=uniq('SKU').slice(0,300),
         catvc=uniq('Categoria VC');
-  ['r','s','t','sl','sk','a'].forEach(p=>{
+  ['r','s','t','sl','sk','a','ppt'].forEach(p=>{
     if(p==='t'){initAnnoDrop(p,an);initMesDrop(p,ms);}else{fillAnnoSel(p+'-anno',an);fillMesSel(p+'-mes',ms);}
-    fillSel(p+'-cat',ca);fillSel(p+'-sala',sa);initMarcaDrop(p,ma);fillSel(p+'-ind',ind);
+    fillSel(p+'-cat',ca);fillSel(p+'-sala',sa);
+    if(document.getElementById(p+'-marca-drop'))initMarcaDrop(p,ma);else fillSel(p+'-marca',ma);
+    fillSel(p+'-ind',ind);
     fillSel(p+'-dep',dep);fillSel(p+'-emp',emp);fillSel(p+'-sabor',sab);
     fillSel(p+'-calibre',cal);fillSel(p+'-sku',sku);fillSel(p+'-catvc',catvc);
   });
@@ -1149,18 +1247,19 @@ function A(){
 
   // filtro general respetando TODOS los selectores
   function aFilt(anno,mes){
-    const ma=Array.isArray(mes)?mes:(mes?[mes]:[]);
+    const mesArr=Array.isArray(mes)?mes:(mes?[mes]:[]);
+    const dep=gv('a-dep'),cat=gv('a-cat'),catvc=gv('a-catvc');
+    const sala=gv('a-sala'),marca=gv('a-marca'),cal=gv('a-calibre'),sku=gv('a-sku');
     return D.filter(r=>{
-      if(annos&&annos.length>0&&!annos.includes(String(r['Año'])))return false;
-      else if((!annos||annos.length===0)&&anno&&String(r['Año'])!==anno)return false;
-      if(ma.length>0 && !ma.includes(String(r['Mes']))) return false;
-      if(gv('a-dep')  && r['Departamento']!==gv('a-dep'))  return false;
-      if(gv('a-cat')  && r['Categoría Industria']!==gv('a-cat')) return false;
-      if(gv('a-catvc')&& r['Categoria VC']!==gv('a-catvc')) return false;
-      if(gv('a-sala') && r['Salas']!==gv('a-sala'))   return false;
-      if(gv('a-marca')&& r['Marca']!==gv('a-marca'))  return false;
-      if(gv('a-calibre')&&r['Calibre']!==gv('a-calibre')) return false;
-      if(gv('a-sku')  &&(r['SKU']||r['DesProducto'])!==gv('a-sku')) return false;
+      if(anno&&String(parseInt(r['Año']))!==String(parseInt(anno)))return false;
+      if(mesArr.length>0&&!mesArr.includes(String(parseInt(r['Mes']))))return false;
+      if(dep&&r['Departamento']!==dep)return false;
+      if(cat&&r['Categoría Industria']!==cat)return false;
+      if(catvc&&r['Categoria VC']!==catvc)return false;
+      if(sala&&r['Salas']!==sala)return false;
+      if(marca&&r['Marca']!==marca)return false;
+      if(cal&&r['Calibre']!==cal)return false;
+      if(sku&&(r['SKU']||r['DesProducto'])!==sku)return false;
       return true;
     });
   }
@@ -1181,19 +1280,19 @@ function A(){
 
   // Build aFilt that handles multi-year
   function aFiltMulti(annos,mes){
-    const ma=Array.isArray(mes)?mes:(mes?[mes]:[]);
+    const mesArr=Array.isArray(mes)?mes:(mes?[mes]:[]);
+    const dep=gv('a-dep'),cat=gv('a-cat'),catvc=gv('a-catvc');
+    const sala=gv('a-sala'),marca=gv('a-marca'),cal=gv('a-calibre'),sku=gv('a-sku');
     return D.filter(r=>{
-      if(annos.length>0&&!annos.includes(String(r['Año'])))return false;
-      else if(annos.length===0&&an&&String(r['Año'])!==an)return false;
-      if(ma.length>0&&!ma.includes(String(r['Mes'])))return false;
-      if(gv('a-dep')&&r['Departamento']!==gv('a-dep'))return false;
-      if(gv('a-cat')&&r['Categoría Industria']!==gv('a-cat'))return false;
-      if(gv('a-catvc')&&r['Categoria VC']!==gv('a-catvc'))return false;
-      if(gv('a-sala')&&r['Salas']!==gv('a-sala'))return false;
-      const _am2=getMarcaSel('a');
-      if(_am2.length>0&&!_am2.includes(r['Marca']))return false;
-      if(gv('a-calibre')&&r['Calibre']!==gv('a-calibre'))return false;
-      if(gv('a-sku')&&(r['SKU']||r['DesProducto'])!==gv('a-sku'))return false;
+      if(annos&&annos.length>0&&!annos.includes(String(parseInt(r['Año']))))return false;
+      if(mesArr.length>0&&!mesArr.includes(String(parseInt(r['Mes']))))return false;
+      if(dep&&r['Departamento']!==dep)return false;
+      if(cat&&r['Categoría Industria']!==cat)return false;
+      if(catvc&&r['Categoria VC']!==catvc)return false;
+      if(sala&&r['Salas']!==sala)return false;
+      if(marca&&r['Marca']!==marca)return false;
+      if(cal&&r['Calibre']!==cal)return false;
+      if(sku&&(r['SKU']||r['DesProducto'])!==sku)return false;
       return true;
     });
   }
@@ -1233,82 +1332,40 @@ function A(){
 
   let html='';
 
-  // ── 1. RESUMEN MoM / YoY ───────────────────────────────────────────────
-  html+=sec('📊','Resumen');
-  html+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:8px">';
-  const cards=[
-    {lbl:'Vol. actual',val:hC.toFixed(1)+' Hl',sub:''},
-    {lbl:'Vol. vs MoM '+mLbl, val:vM!==null?(mov(vM)+Math.abs(vM*100).toFixed(1)+'%'):'—', col:vM!==null?cHl(vM):'#8492A6', sub:'Ant: '+hP.toFixed(1)+' Hl'},
-    {lbl:'Vol. vs YoY '+yLbl, val:vY!==null?(mov(vY)+Math.abs(vY*100).toFixed(1)+'%'):'—', col:vY!==null?cHl(vY):'#8492A6', sub:'Ant: '+hY.toFixed(1)+' Hl'},
-    {lbl:'Share actual',  val:shC.toFixed(2)+'%', sub:''},
-    {lbl:'Share vs MoM',  val:dShM!==null?(dShM>0?'+':'')+dShM.toFixed(2)+'%':'—', col:dShM!==null?cHl(dShM):'#8492A6', sub:'Ant: '+(shP!==null?shP.toFixed(2)+'%':'—')},
-    {lbl:'Share vs YoY',  val:dShY!==null?(dShY>0?'+':'')+dShY.toFixed(2)+'%':'—', col:dShY!==null?cHl(dShY):'#8492A6', sub:'Ant: '+(shY!==null?shY.toFixed(2)+'%':'—')},
-  ];
-  cards.forEach(function(c){
-    html+='<div class="card" style="margin-bottom:0"><div class="kpi-lbl">'+c.lbl+'</div>'
-      +'<div style="font-size:20px;font-weight:700;color:'+(c.col||'#1C2B4A')+'">'+c.val+'</div>'
-      +(c.sub?'<div style="font-size:10px;color:#8492A6;margin-top:2px">'+c.sub+'</div>':'')
-      +'</div>';
-  });
-  html+='</div>';
-
-  // ── helper: tabla dim expandible por SKU ──────────────────────────────
-  function dimTbl(dimKey, prefix){
-    var idx={};
-    data.forEach(function(r){
-      var d=r[dimKey]||'—', sk=r['SKU']||r['DesProducto']||'Sin SKU';
-      if(!idx[d])idx[d]={hC:0,hP:0,sk:{}};
-      idx[d].hC+=nv(r['Hectolitros']);
-      if(!idx[d].sk[sk])idx[d].sk[sk]={hC:0,hP:0};
-      idx[d].sk[sk].hC+=nv(r['Hectolitros']);
-    });
-    dM.forEach(function(r){
-      var d=r[dimKey]||'—', sk=r['SKU']||r['DesProducto']||'Sin SKU';
-      if(!idx[d])idx[d]={hC:0,hP:0,sk:{}};
-      idx[d].hP+=nv(r['Hectolitros']);
-      if(!idx[d].sk[sk])idx[d].sk[sk]={hC:0,hP:0};
-      idx[d].sk[sk].hP+=nv(r['Hectolitros']);
-    });
-    var ents=Object.entries(idx).sort(function(a,b){return b[1].hC-a[1].hC;});
-    var totC=ents.reduce(function(s,e){return s+e[1].hC;},0);
-    var totP=ents.reduce(function(s,e){return s+e[1].hP;},0);
-    var t='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'
-      +'<th>'+dimKey+' / SKU</th><th>Hl actual</th><th>Hl '+mLbl+'</th>'
-      +'<th>Dif Hl</th><th>Share</th><th>Δ Share</th>'
-      +'</tr></thead><tbody>';
-    ents.forEach(function(e,di){
-      var d=e[0],v=e[1];
-      var dHl=v.hP>0?v.hC-v.hP:null;
-      var shC2=totC>0?v.hC/totC*100:0, shP2=totP>0?v.hP/totP*100:null;
-      var dSh=shP2!==null?shC2-shP2:null;
-      var pid=prefix+di;
-      t+='<tr class="tr0 tr-tog" id="'+pid+'" onclick="togAlA(this.id)">'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ '+d+'</td>'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">'+v.hC.toFixed(1)+'</td>'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">'+(v.hP>0?v.hP.toFixed(1):'—')+'</td>'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:'+(dHl!==null?cHl(dHl):'#8492A6')+'">'+(dHl!==null?(dHl>0?'+':'')+dHl.toFixed(1)+' Hl':'—')+'</td>'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">'+tag('t-blue',shC2.toFixed(1)+'%')+'</td>'
-        +'<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:'+(dSh!==null?cHl(dSh):'#8492A6')+'">'+(dSh!==null?(dSh>0?'+':'')+dSh.toFixed(2)+'%':'—')+'</td>'
-        +'</tr>';
-      Object.entries(v.sk).sort(function(a,b){return b[1].hC-a[1].hC;}).forEach(function(se){
-        var sk=se[0],sv=se[1];
-        var skD=sv.hP>0?sv.hC-sv.hP:null;
-        var skSh=totC>0?sv.hC/totC*100:0, skShP=totP>0?sv.hP/totP*100:null, skDSh=skShP!==null?skSh-skShP:null;
-        t+='<tr class="'+pid+'-child tr1" style="display:none">'
-          +'<td style="padding:6px 12px 6px 26px;border-bottom:1px solid #F4F5F7;font-size:11px">└ '+sk.substring(0,40)+'</td>'
-          +'<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">'+sv.hC.toFixed(1)+'</td>'
-          +'<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7;color:#8492A6">'+(sv.hP>0?sv.hP.toFixed(1):'—')+'</td>'
-          +'<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:'+(skD!==null?cHl(skD):'#8492A6')+'">'+(skD!==null?(skD>0?'+':'')+skD.toFixed(1)+' Hl':'—')+'</td>'
-          +'<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">'+tag('t-blue',skSh.toFixed(1)+'%')+'</td>'
-          +'<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7;font-weight:700;color:'+(skDSh!==null?cHl(skDSh):'#8492A6')+'">'+(skDSh!==null?(skDSh>0?'+':'')+skDSh.toFixed(2)+'%':'—')+'</td>'
-          +'</tr>';
-      });
-    });
-    t+='</tbody></table></div>';
-    return t;
+  // ── 1. KPIs compactos ─────────────────────────────────────────────────
+  function pAr(v){if(v===null)return'—';return(v>0?'▲ +':'▼ ')+Math.abs(v*100).toFixed(1)+'%';}
+  function kpiCard(lbl,val,mom,yoy){
+    var mc=mom===null?'#8492A6':mom>0?'#059669':'#DC2626';
+    var yc=yoy===null?'#8492A6':yoy>0?'#059669':'#DC2626';
+    return '<div style="background:white;border:1px solid #E1E5EB;border-radius:10px;padding:14px 18px;flex:1;min-width:150px;box-shadow:0 1px 3px rgba(0,0,0,0.06)">'
+      +'<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase;margin-bottom:6px">'+lbl+'</div>'
+      +'<div style="font-size:22px;font-weight:800;color:#1C2B4A;margin-bottom:8px;line-height:1">'+val+'</div>'
+      +'<div style="display:flex;gap:14px">'
+      +'<div><div style="font-size:9px;color:#8492A6;font-weight:600;margin-bottom:2px">MoM</div><div style="font-size:12px;font-weight:700;color:'+mc+'">'+pAr(mom)+'</div></div>'
+      +'<div><div style="font-size:9px;color:#8492A6;font-weight:600;margin-bottom:2px">YoY</div><div style="font-size:12px;font-weight:700;color:'+yc+'">'+pAr(yoy)+'</div></div>'
+      +'</div></div>';
   }
+  var _iBs=data.reduce(function(s,r){return s+nv(r['Ingreso (Bs)']);},0);
+  var _iBsM=dM.reduce(function(s,r){return s+nv(r['Ingreso (Bs)']);},0);
+  var _iBsY=dY.reduce(function(s,r){return s+nv(r['Ingreso (Bs)']);},0);
+  var _catT=catC.reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
+  var _vMom=hP>0?vPct(hC,hP):null,_vYoy=hY>0?vPct(hC,hY):null;
+  var _iMom=_iBsM>0?vPct(_iBs,_iBsM):null,_iYoy=_iBsY>0?vPct(_iBs,_iBsY):null;
+  var _sh=_catT>0?hC/_catT*100:0;
+  var _shM=hCM>0&&hP>0?vPct(hC/(_catT||1)*100,hCM):null;
+  var _shY=hCY>0&&hY>0?vPct(hC/(_catT||1)*100,hCY):null;
+  var _mSet={};data.forEach(function(r){if(r['Marca'])_mSet[r['Marca']]=1;});var _mC=Object.keys(_mSet).length;
+  var _sSet={};data.forEach(function(r){if(r['Salas'])_sSet[r['Salas']]=1;});var _sC=Object.keys(_sSet).length;
+  document.getElementById('a-kpis').innerHTML=
+    '<div style="display:flex;gap:12px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px;align-items:stretch">'
+    +kpiCard('Volumen Hl',hC.toFixed(1)+' Hl',_vMom,_vYoy)
+    +kpiCard('Ingresos Bs',_iBs.toLocaleString('es-BO',{maximumFractionDigits:0})+' Bs',_iMom,_iYoy)
+    +kpiCard('Share %',_sh.toFixed(1)+'%',_shM,_shY)
+    +kpiCard('Marcas',String(_mC),null,null)
+    +kpiCard('Salas',String(_sC),null,null)
+    +'</div>';
 
-  // ── 2. CALIBRE ───────────────────────────────────────────────────────
+  // ── 2.  // ── 2. CALIBRE ───────────────────────────────────────────────────────
   html+=sec('📦','Calibre');
   html+='<div class="card" style="padding:14px">'+dimTbl('Calibre','ac')+'</div>';
 
@@ -1339,6 +1396,47 @@ function A(){
     if(v>0.02)return tag('t-red','↑ +'+(v*100).toFixed(1)+'%');
     if(v<-0.02)return tag('t-green','↓ −'+Math.abs(v*100).toFixed(1)+'%');
     return tag('t-gray','→ Estable');
+  }
+  function dimTbl(dimKey,pfx){
+    var idx={},idxM={},totHL=data.reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
+    data.forEach(function(r){
+      var d=r[dimKey]||'Sin '+dimKey,sk=r['SKU']||r['DesProducto']||'Sin SKU';
+      var hl=nv(r['Hectolitros']),ing=nv(r['Ingreso (Bs)']);
+      if(!idx[d])idx[d]={hl:0,ing:0,sk:{}};idx[d].hl+=hl;idx[d].ing+=ing;
+      if(!idx[d].sk[sk])idx[d].sk[sk]={hl:0,ing:0};idx[d].sk[sk].hl+=hl;idx[d].sk[sk].ing+=ing;
+    });
+    dM.forEach(function(r){
+      var d=r[dimKey]||'Sin '+dimKey,sk=r['SKU']||r['DesProducto']||'Sin SKU';
+      var hl=nv(r['Hectolitros']);
+      if(!idxM[d])idxM[d]={hl:0,sk:{}};idxM[d].hl+=hl;
+      if(!idxM[d].sk[sk])idxM[d].sk[sk]=0;idxM[d].sk[sk]+=hl;
+    });
+    var entries=Object.entries(idx).sort(function(a,b){return b[1].hl-a[1].hl;});
+    var t='<table class="tbl"><thead><tr><th>'+dimKey+' / SKU</th><th>Hl</th><th>Share%</th><th>vs MoM</th><th>Movim.</th></tr></thead><tbody>';
+    entries.forEach(function(e,ci){
+      var d=e[0],v=e[1],prev=idxM[d];
+      var sh=totHL>0?v.hl/totHL*100:0;
+      var shP=prev&&hP>0?prev.hl/hP*100:null;
+      var mom=shP!==null?sh-shP:null;
+      var pid=pfx+ci;
+      t+='<tr class="tr0 tr-tog" id="'+pid+'" onclick="togAlA(this.id)">'
+        +'<td style="padding:8px 12px;font-weight:700">▶ '+d+'</td>'
+        +'<td style="padding:8px 12px">'+v.hl.toFixed(1)+'</td>'
+        +'<td style="padding:8px 12px"><span class="tag t-blue">'+sh.toFixed(1)+'%</span></td>'
+        +'<td style="padding:8px 12px;font-size:11px;font-weight:600;color:'+(mom!==null?cHl(mom):'#8492A6')+'">'+(mom!==null?(mom>0?'▲ +':'▼ ')+Math.abs(mom).toFixed(2)+'pp':'—')+'</td>'
+        +'<td style="padding:8px 12px">'+mTag(v.ing/Math.max(v.hl,1),prev?prev.ing/Math.max(prev.hl,1):0)+'</td></tr>';
+      Object.entries(v.sk).sort(function(a,b){return b[1].hl-a[1].hl;}).slice(0,20).forEach(function(se){
+        var sk=se[0],sv=se[1];
+        var skSh=totHL>0?sv.hl/totHL*100:0;
+        t+='<tr class="'+pid+'-child tr1" style="display:none">'
+          +'<td style="padding:6px 12px 6px 26px;font-size:11px">└ '+sk.substring(0,35)+'</td>'
+          +'<td style="padding:6px 12px">'+sv.hl.toFixed(1)+'</td>'
+          +'<td style="padding:6px 12px">'+skSh.toFixed(2)+'%</td>'
+          +'<td style="padding:6px 12px;font-size:11px">—</td>'
+          +'<td style="padding:6px 12px"></td></tr>';
+      });
+    });
+    t+='</tbody></table>';return t;
   }
   var pH='<div style="overflow-x:auto"><table class="tbl"><thead><tr>'
     +'<th>Calibre / SKU</th><th>Precio actual</th><th>Precio '+mLbl+'</th><th>Movimiento</th>'
@@ -1797,6 +1895,9 @@ function initMarcaDrop(p,marcas){
 
 let _rmdTimer={};
 function refreshMarcaDrop(p){
+  // Only refresh if this section is currently visible
+  const pg=document.getElementById('pg-'+({'r':'resumen','t':'tendencia','p':'precios','sl':'salas','sk':'skus','a':'alertas','ppt':'ppt'}[p]||p));
+  if(pg&&!pg.classList.contains('on'))return;
   clearTimeout(_rmdTimer[p]);
   _rmdTimer[p]=setTimeout(()=>_doRefreshMarca(p),300);
 }
@@ -1820,7 +1921,7 @@ function _doRefreshMarca(p){
     if(r['Marca'])marcaSet.add(r['Marca']);
   }
   const marcas=[...marcaSet].sort();
-  initMarcaDrop(p,marcas);
+  if(document.getElementById(p+'-marca-drop'))initMarcaDrop(p,marcas);else fillSel(p+'-marca',marcas);
 }
 
 // ===== PRECIO vs VOLUMEN CHART =====
@@ -1840,7 +1941,7 @@ function renderPVolChart(){
       const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
       return q>0?parseFloat((g/q).toFixed(2)):null;
     }),
-    borderColor:sharedCC[i]||CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
+    borderColor:CC[i]||CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
   }));
   const volDS=marcas.map((m,i)=>({
     label:m,
@@ -2006,10 +2107,101 @@ function exportPage(btn){
   },1000);
 }
 
+// ===== PPT =====
+function filtPPT(dep){
+  // Filter using ppt filters + optional dept
+  var _an=getAnnoSel('ppt'),_ms=getMesSel('ppt');
+  var cat=gv('ppt-cat'),catvc=gv('ppt-catvc');
+  return D.filter(function(r){
+    if(_an.length>0&&_an.indexOf(String(parseInt(r['Año'])))<0)return false;
+    if(_ms.length>0&&_ms.indexOf(String(parseInt(r['Mes'])))<0)return false;
+    if(cat&&r['Categoría Industria']!==cat)return false;
+    if(catvc&&r['Categoria VC']!==catvc)return false;
+    if(dep&&r['Departamento']!==dep)return false;
+    return true;
+  });
+}
+function buildShareChart(canvasId,legId,tblId,data){
+  if(!data.length)return;
+  var meses=getMeses(data);
+  var mLs=meses.map(function(m){var p=m.split('-');return MN[parseInt(p[1])]+' '+p[0].slice(2);});
+  var marcas=grp(data,'Marca').map(function(e){return e[0];});
+  var ds=marcas.map(function(m,i){return{label:m,data:meses.map(function(ms){var p=ms.split('-'),y=p[0],mo=p[1];var md=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo));});var tot=md.reduce(function(s,r){return s+nv(r['Hectolitros']);},0);var dHL=md.filter(function(r){return r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return tot>0?parseFloat((dHL/tot*100).toFixed(1)):null;}),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true};});
+  mkC(canvasId,{type:'line',data:{labels:mLs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:16}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:function(v){return v+'%';},font:{size:9},color:'#8492A6'}}}}});
+  var leg=document.getElementById(legId);
+  if(leg)leg.innerHTML=marcas.map(function(m,i){return'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>';}).join('');
+  // Build table grouped by year
+  var tbl=document.getElementById(tblId);if(!tbl)return;
+  var years=[...new Set(meses.map(function(m){return m.split('-')[0];}))].sort();
+  var ht='<table class="tbl" style="font-size:11px"><thead><tr><th>Año/Mes</th>'+marcas.map(function(m){return'<th>'+m+'</th>';}).join('')+'</tr></thead><tbody>';
+  years.forEach(function(yr,yi){
+    var yMeses=meses.filter(function(m){return m.split('-')[0]===yr;});
+    var pid='psh'+canvasId+yi;
+    var yTot=data.filter(function(r){return String(r['Año'])===yr;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
+    ht+='<tr class="tr0 tr-tog" id="'+pid+'" onclick="togAlA(this.id)" style="background:#F4F5F7"><td style="padding:6px 12px;font-weight:700">▶ '+yr+'</td>'+marcas.map(function(m){var dHL=data.filter(function(r){return String(r['Año'])===yr&&r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return'<td style="padding:6px 10px;font-weight:600">'+(yTot>0?(dHL/yTot*100).toFixed(1)+'%':'—')+'</td>';}).join('')+'</tr>';
+    yMeses.forEach(function(ms){
+      var p=ms.split('-'),y=p[0],mo=p[1];var mLbl=MN[parseInt(mo)];
+      var mTot=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo));}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);
+      ht+='<tr class="'+pid+'-child tr1" style="display:none"><td style="padding:5px 12px 5px 22px">'+mLbl+'</td>'+marcas.map(function(m){var dHL=data.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&r['Marca']===m;}).reduce(function(s,r){return s+nv(r['Hectolitros']);},0);return'<td style="padding:5px 10px">'+(mTot>0?(dHL/mTot*100).toFixed(1)+'%':'—')+'</td>';}).join('')+'</tr>';
+    });
+  });
+  ht+='</tbody></table>';
+  tbl.innerHTML=ht;
+}
+function buildPrecioTable(elId,data){
+  var el=document.getElementById(elId);if(!el||!data.length){if(el)el.innerHTML='<div style="color:#8492A6;padding:12px">Sin datos</div>';return;}
+  var dE1=data.filter(function(r){return String(r['Empaque'])==='1';});
+  if(!dE1.length){el.innerHTML='<div style="color:#8492A6;padding:12px">Sin datos Empaque 1</div>';return;}
+  var marcas=grp(dE1,'Marca').map(function(e){return e[0];});
+  var meses=getMeses(dE1);
+  var ht='<table class="tbl" style="font-size:11px"><thead><tr><th>Marca</th>'+meses.map(function(ms){var p=ms.split('-');return'<th>'+MN[parseInt(p[1])]+' '+p[0].slice(2)+'</th>';}).join('')+'<th>Movim.</th></tr></thead><tbody>';
+  marcas.forEach(function(m){
+    var pus=meses.map(function(ms){var p=ms.split('-'),y=p[0],mo=p[1];var md=dE1.filter(function(r){return String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&r['Marca']===m;});var q=md.reduce(function(s,r){return s+nv(r['QtyVnt']);},0),g=md.reduce(function(s,r){return s+nv(r['Ingreso (Bs)']);},0);return q>0?g/q:null;});
+    var lastPu=null,prevPu=null;
+    for(var k=pus.length-1;k>=0;k--){if(pus[k]!==null){if(lastPu===null)lastPu=pus[k];else if(prevPu===null){prevPu=pus[k];break;}}}
+    var mov='→';var mCol='#8492A6';
+    if(lastPu!==null&&prevPu!==null){if(lastPu>prevPu+0.05){mov='↑ Subió';mCol='#DC2626';}else if(lastPu<prevPu-0.05){mov='↓ Bajó';mCol='#059669';}else{mov='→ Estable';mCol='#8492A6';}}
+    ht+='<tr><td style="padding:6px 12px;font-weight:600">'+m+'</td>'+pus.map(function(pu){return'<td style="padding:6px 10px">'+(pu!==null?'Bs '+pu.toFixed(2):'—')+'</td>';}).join('')+'<td style="padding:6px 12px;font-weight:700;color:'+mCol+'">'+mov+'</td></tr>';
+  });
+  ht+='</tbody></table>';
+  el.innerHTML=ht;
+}
+let _pptTimer=0;
+function PPT(){
+  clearTimeout(_pptTimer);
+  _pptTimer=setTimeout(_doPPT,200);
+}
+function _doPPT(){
+  if(!D.length)return;
+  try{
+    var nat=filtPPT('');
+    var sc=filtPPT('SANTA CRUZ');
+    var cbba=filtPPT('COCHABAMBA');
+    var lpaz=filtPPT('LA PAZ');
+    buildShareChart('ppt-share-nat','ppt-share-nat-leg','ppt-share-nat-tbl',nat);
+    buildShareChart('ppt-share-sc','ppt-share-sc-leg','ppt-share-sc-tbl',sc);
+    buildPrecioTable('ppt-precio-nat',nat);
+    buildPrecioTable('ppt-precio-cbba',cbba);
+    buildPrecioTable('ppt-precio-lpaz',lpaz);
+  }catch(e){console.error('PPT error:',e);}
+}
+function exportPPTPage(){
+  var allPages=document.querySelectorAll('.page');
+  var side=document.querySelector('.side');
+  allPages.forEach(function(p){p.style.display=p.id==='pg-ppt'?'block':'none';});
+  if(side)side.style.display='none';
+  document.title='Valencia Citrus · Informe PPT';
+  window.print();
+  setTimeout(function(){
+    allPages.forEach(function(p){p.style.display='';});
+    if(side)side.style.display='';
+    document.title='Valencia Citrus — Market Share';
+  },1000);
+}
+
 function renderAll(){
   requestAnimationFrame(()=>{
     R();
-    setTimeout(()=>S(),15);
     setTimeout(()=>{T();renderCompChecks();},30);
     setTimeout(()=>P(),45);
     setTimeout(()=>SL(),60);
@@ -2018,13 +2210,26 @@ function renderAll(){
   });
 }
 
+var _rendered={};
 function go(id,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
-  document.getElementById('pg-'+id).classList.add('on');el.classList.add('on');
-  // Refresh comp dropdowns when navigating to tendencia
-  if(id==='tendencia'&&D.length>0)renderCompChecks();
-  if(id==='alertas'){if(D.length>0)A();}
+  const pg=document.getElementById('pg-'+id);if(pg)pg.classList.add('on');
+  if(el)el.classList.add('on');
+  // Only render on first visit; after that renders happen via filter changes
+  if(D.length>0&&!_rendered[id]){
+    _rendered[id]=true;
+    if(id==='tendencia'){T();renderCompChecks();}
+    else if(id==='alertas')A();
+    else if(id==='resumen')R();
+    else if(id==='precios')P();
+    else if(id==='salas')SL();
+    else if(id==='skus')SK();
+    else if(id==='ppt')PPT();
+  } else if(id==='tendencia'&&D.length>0){
+    // Charts need redraw when canvas becomes visible
+    setTimeout(T,10);
+  }
 }
 </script>
 </body>
