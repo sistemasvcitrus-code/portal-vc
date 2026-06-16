@@ -163,6 +163,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .vc-progress-fill{height:100%;width:0%;background:#F59E0B;border-radius:4px;transition:width .4s ease}
 .vc-toast{position:fixed;bottom:28px;right:28px;background:#059669;color:white;padding:13px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.25);transform:translateY(80px);opacity:0;transition:all .4s ease}
 .vc-toast.show{transform:translateY(0);opacity:1}
+.dim-chip{display:flex;align-items:center;gap:5px;background:#EFF6FF;border:1.5px solid #2563EB;color:#1D4ED8;border-radius:16px;padding:5px 12px 5px 8px;font-size:11px;font-weight:700;cursor:grab;user-select:none;transition:opacity .15s,transform .15s}
+.dim-chip:active{cursor:grabbing}
+.dim-chip.dragging{opacity:0.4}
+.dim-chip.drag-over{transform:scale(1.06);box-shadow:0 0 0 2px #2563EB}
+.dim-chip .dim-handle{font-size:13px;opacity:0.6}
+.dim-chip-sku{display:flex;align-items:center;gap:5px;background:#F4F5F7;border:1.5px dashed #8492A6;color:#5B677A;border-radius:16px;padding:5px 12px;font-size:11px;font-weight:700}
 </style>
 </head>
 <body>
@@ -227,11 +233,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="font-size:11px;color:#8492A6;margin-top:4px">Pestaña "base de portal"</div>
       </div>
       <div class="kpi-row" id="r-kpis"></div>
-      <div class="card"><div class="card-title" style="margin-bottom:8px">🚦 Semáforo de marcas</div><div style="overflow-x:auto" id="r-sem"></div></div>
-      <div class="gp-grid">
-        <div class="gp-card"><div class="gp-hd" style="color:#059669">▲ Top 5 ganadores MoM</div><div id="r-gan"></div></div>
-        <div class="gp-card"><div class="gp-hd" style="color:#DC2626">▼ Top 5 perdedores MoM</div><div id="r-per"></div></div>
-      </div>
       <div class="card">
         <div class="card-title">Share visual</div>
         <div class="dims">
@@ -246,7 +247,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div style="position:relative;height:220px"><canvas id="r-chart"></canvas></div>
         <div class="leg" id="r-leg"></div>
       </div>
-      <div id="r-ins"></div>
+      <div class="gp-grid">
+        <div class="gp-card"><div class="gp-hd" style="color:#059669">▲ Top 5 ganadores MoM</div><div id="r-gan"></div></div>
+        <div class="gp-card"><div class="gp-hd" style="color:#DC2626">▼ Top 5 perdedores MoM</div><div id="r-per"></div></div>
+      </div>
+
       <div class="card-row c2" style="margin-bottom:14px">
         <div class="card"><div class="card-title">Bubble: Share vs Volumen</div><div style="position:relative;height:220px"><canvas id="r-bubble"></canvas></div></div>
         <div class="card"><div class="card-title">Ranking</div><div style="overflow-x:auto" id="r-rank"></div></div>
@@ -322,7 +327,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="card-title" style="margin-bottom:0" id="t-share-title">Evolución share % por Marca</div>
           <div class="dims" style="margin-bottom:0">
             <button class="db on" onclick="setTDim('Marca',this)">Marca</button>
-            <button class="db" onclick="setTDim('Categoría Industria',this)">Categoría</button>
             <button class="db" onclick="setTDim('Salas',this)">Sala</button>
             <button class="db" onclick="setTDim('Empaque',this)">Empaque</button>
             <button class="db" onclick="setTDim('Calibre',this)">Calibre</button>
@@ -365,13 +369,38 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           </div>
         </div>
         <div class="leg" id="p-pvol-leg" style="margin-top:10px"></div>
-      </div>
+
+      <!-- EVOLUCION POR METRICA -->
+      <div class="card" style="margin-top:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+          <div class="card-title" style="margin-bottom:0">Evolución por Métrica · Marca</div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div class="dims" style="margin-bottom:0">
+              <button class="db on" onclick="setTMetric('Hectolitros',this)">Hl</button>
+              <button class="db" onclick="setTMetric('QtyVnt',this)">Unidades</button>
+              <button class="db" onclick="setTMetric('share',this)">Share %</button>
+              <button class="db" onclick="setTMetric('Ingreso (Bs)',this)">Ingresos</button>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:11px;font-weight:600;color:#8492A6">Empaque</span>
+              <select id="t-metric-emp" onchange="renderTMetric()" style="font-size:11px;padding:4px 8px;border-radius:5px;border:1px solid #E1E5EB;background:#FEF9C3;color:#92400E;font-weight:700">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div style="position:relative;height:280px"><canvas id="t-metric-line"></canvas></div>
+        <div class="leg" id="t-metric-leg" style="margin-top:8px"></div>
+        <div style="margin-top:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <span style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#8492A6;text-transform:uppercase">Jerarquía de la tabla (arrastra para reordenar)</span>
+          <div id="t-metric-dimorder" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div style="margin-top:10px;overflow-x:auto" id="t-metric-tbl"></div>
+      </div>      </div>
 
 
 
-      <div class="kpi-row" id="t-kpis"></div>
-            <div id="t-ins"></div>
-            <div class="card" style="margin-top:14px"><div class="card-title" style="margin-bottom:12px">Datos mensuales</div><div style="overflow-x:auto" id="t-tbl"></div></div>
+            
     </div>    <!-- PRECIOS -->
     <div class="page" id="pg-precios">
       <div class="ph"><div class="ph-label">Estrategia de precios</div><div style="display:flex;align-items:center;justify-content:space-between"><div class="ph-title">Precios & Estrategia</div><button onclick="exportPage(this)" class="btn-clr" style="margin-left:auto;background:#1C2B4A;color:white;border-color:#1C2B4A;display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px">⬇ Exportar PDF</button></div></div>
@@ -622,7 +651,7 @@ function trigRender(p){
   if(D.length)refreshMarcaDrop(p);
   if(p==='r')R();else if(p==='t')T();
   else if(p==='p'){sP();P();}else if(p==='sl')SL();else if(p==='sk')SK();
-  else if(p==='a')A();else if(p==='ppt')PPT();
+  else if(p==='a')A();
 }
 function initMesDrop(p,meses){
   const drop=document.getElementById(p+'-mes-drop');if(!drop)return;
@@ -836,29 +865,14 @@ function R(){
   const pM=grp(data,'Marca'),mapM={},mapY={};
   grp(dM,'Marca').forEach(([m,v])=>mapM[m]=v);grp(dY,'Marca').forEach(([m,v])=>mapY[m]=v);
   const hMt=HL(dM),hYt=HL(dY);
-  const semRows=pM.slice(0,20).map(([m,v])=>{
-    const sC=hC>0?v.hl/hC*100:0,sP=mapM[m]&&hMt>0?mapM[m].hl/hMt*100:null,sY=mapY[m]&&hYt>0?mapY[m].hl/hYt*100:null;
-    const dMv=sP!==null?sC-sP:null,dYv=sY!==null?sC-sY:null;
-    const sem=dMv!==null&&dMv>0.3?'🟢':dMv!==null&&dMv<-0.3?'🔴':'🟡';
-    const mTxt=dMv!==null?`<span class="sem-d ${dMv>0.05?'up':dMv<-0.05?'dn':'fl2'}">${dMv>0?'▲':'▼'} ${Math.abs(dMv).toFixed(2)}pp</span>`:'<span class="sem-d fl2">—</span>';
-    const yTxt=dYv!==null?`<span class="sem-d ${dYv>0.05?'up':dYv<-0.05?'dn':'fl2'}">${dYv>0?'▲':'▼'} ${Math.abs(dYv).toFixed(2)}pp</span>`:'<span class="sem-d fl2">—</span>';
-    const aw=(v.hl/(pM[0]?pM[0][1].hl:1)*100).toFixed(1);
-    return`<tr><td style="text-align:center;font-size:22px;line-height:1;padding:8px 12px;border-bottom:1px solid #F4F5F7">${sem}</td><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="sem-name">${m}</span></td><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><span class="sem-pct">${sC.toFixed(1)}%</span></td><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${mTxt}</td><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7">${yTxt}</td><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7"><div class="bar-row"><div class="bar-bg" style="min-width:80px"><div class="bar-fg" style="width:${aw}%"></div></div><span style="font-size:10px;color:#8492A6;margin-left:6px">${v.hl.toFixed(1)}</span></div></td></tr>`;
-  }).join('');
-  document.getElementById('r-sem').innerHTML=`<table class="sem-tbl"><thead><tr><th style="width:50px;text-align:center">🚦</th><th>Marca</th><th>Share %</th><th>vs ${mL}</th><th>vs ${yL}</th><th>Volumen Hl</th></tr></thead><tbody>${semRows}</tbody></table>`;
-  const gp=pM.map(([m,v])=>{const sC=hC>0?v.hl/hC*100:0;const sP=mapM[m]&&hMt>0?mapM[m].hl/hMt*100:null;return{m,sC,d:sP!==null?sC-sP:null};}).filter(x=>x.d!==null);
+    const gp=pM.map(([m,v])=>{const sC=hC>0?v.hl/hC*100:0;const sP=mapM[m]&&hMt>0?mapM[m].hl/hMt*100:null;return{m,sC,d:sP!==null?sC-sP:null};}).filter(x=>x.d!==null);
   const gan=gp.filter(x=>x.d>0).sort((a,b)=>b.d-a.d).slice(0,5);
   const per=gp.filter(x=>x.d<0).sort((a,b)=>a.d-b.d).slice(0,5);
   document.getElementById('r-gan').innerHTML=gan.length?gan.map(x=>`<div class="gp-row"><span class="gp-name">${x.m}</span><div class="gp-right"><span class="tag t-green">+${x.d.toFixed(2)}pp</span><span class="gp-sh">${x.sC.toFixed(1)}%</span></div></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:8px 0">Sin datos MoM</div>';
   document.getElementById('r-per').innerHTML=per.length?per.map(x=>`<div class="gp-row"><span class="gp-name">${x.m}</span><div class="gp-right"><span class="tag t-red">${x.d.toFixed(2)}pp</span><span class="gp-sh">${x.sC.toFixed(1)}%</span></div></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:8px 0">Sin datos MoM</div>';
-  const filas=grp(data,dim).slice(0,12),labels=filas.map(f=>f[0]),vals=filas.map(f=>f[1].hl),cols=labels.map((_,i)=>CC[i%CC.length]);
+  const filas=grp(data,dim).slice(0,10),labels=filas.map(f=>f[0]),vals=filas.map(f=>f[1].hl),cols=labels.map((_,i)=>CC[i%CC.length]);
   mkC('r-chart',{type:'bar',data:{labels,datasets:[{data:vals,backgroundColor:cols,borderRadius:3,borderSkipped:false}]},options:{...CO,scales:{y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10},color:'#8492A6'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8492A6',maxRotation:30}}},plugins:{...CO.plugins,tooltip:{...CO.plugins.tooltip,callbacks:{label:c=>`${c.raw.toFixed(2)} Hl (${hC>0?(c.raw/hC*100).toFixed(1):0}%)`}}}}});
   document.getElementById('r-leg').innerHTML=labels.map((l,i)=>`<span class="leg-i"><span class="leg-d" style="background:${cols[i]}"></span>${l}</span>`).join('');
-  const ins=[];
-  if(pM[0]){const pct=hC>0?(pM[0][1].hl/hC*100):0;ins.push({t:'info',txt:`Marca líder: <strong>${pM[0][0]}</strong> con ${pct.toFixed(1)}% de share.`});}
-  if(gan[0]&&gan[0].d>0.3){ins.push({t:'success',txt:`<strong>${gan[0].m}</strong> ganó <strong>+${gan[0].d.toFixed(2)}pp</strong> ${mL}.`});}
-  if(per[0]&&per[0].d<-0.3){ins.push({t:'danger',txt:`<strong>${per[0].m}</strong> perdió <strong>${Math.abs(per[0].d).toFixed(2)}pp</strong> ${mL}.`});}
-  document.getElementById('r-ins').innerHTML=ins.map(i=>`<div class="ins ${i.t}">${i.txt}</div>`).join('');
   // Build GL2 (Gains & Losses for Resumen)
   const ms1r=ms1;
   const hasMr=!!an&&!!ms1r;
@@ -874,9 +888,6 @@ function R(){
   const gps2=grp(data,dim).slice(0,10);
   mkC('r-bubble',{type:'bubble',data:{datasets:gps2.map(([nm,v],i)=>({label:nm,data:[{x:parseFloat((hC>0?v.hl/hC*100:0).toFixed(1)),y:0,r:Math.max(5,Math.min(28,hC>0?v.hl/hC*70:5))}],backgroundColor:CC[i%CC.length]+'99',borderColor:CC[i%CC.length],borderWidth:1.5}))},options:{...CO,scales:{x:{title:{display:true,text:'Share %',font:{size:9},color:'#8492A6'},grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10},color:'#8492A6'}},y:{display:false}},plugins:{...CO.plugins,tooltip:{...CO.plugins.tooltip,callbacks:{label:c=>`${c.dataset.label}: ${c.raw.x}%`}}}}});
   document.getElementById('r-rank').innerHTML=`<table class="tbl"><thead><tr><th>#</th><th>${dim}</th><th>Hl</th><th>Share</th></tr></thead><tbody>${gps2.map(([nm,v],i)=>`<tr><td style="color:#8492A6;font-weight:700">${i+1}</td><td><strong>${nm}</strong></td><td>${v.hl.toFixed(2)}</td><td><span class="tag t-blue">${hC>0?(v.hl/hC*100).toFixed(1):0}%</span></td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('r-tbl-title').textContent='Detalle por '+dim;
-  const mHL=filas[0]?filas[0][1].hl:1;
-  document.getElementById('r-tbl').innerHTML=`<table class="tbl"><thead><tr><th>${dim}</th><th>Hl</th><th>Share%</th><th>Ingresos Bs</th></tr></thead><tbody>${filas.map(([nm,v])=>{const sh=hC>0?(v.hl/hC*100).toFixed(1):0;return`<tr><td><strong>${nm}</strong></td><td>${v.hl.toFixed(2)}</td><td><span class="tag t-blue">${sh}%</span></td><td>${v.ing.toLocaleString('es-BO',{maximumFractionDigits:0})}</td></tr>`;}).join('')}</tbody></table>`;
 }
 
 // ===== SHARE =====
@@ -933,42 +944,52 @@ function T(){
   const data=filt('t'),meses=getMeses(data);
   const mL=meses.map(m=>{const[y,mo]=m.split('-');return`${MN[parseInt(mo)]} ${y}`;});
   const tDim=window._tDim||'Marca';
-  const top8=grp(data,tDim).slice(0,8).map(e=>e[0]);
-  window._tTop8=top8; window._tCC=top8.map((_,i)=>CC[i%CC.length]);
+  // ===== Single-pass aggregation for share chart+table =====
+  const periodTotSh={},dimAggSh={};
+  for(let ri=0;ri<data.length;ri++){
+    const r=data[ri];
+    const ms=String(r['Año'])+'-'+String(parseInt(r['Mes'])).padStart(2,'0');
+    const hl=nv(r['Hectolitros']);
+    periodTotSh[ms]=(periodTotSh[ms]||0)+hl;
+    const d=r[tDim]||'Sin datos';
+    if(!dimAggSh[d])dimAggSh[d]={agg:{},totHl:0};
+    dimAggSh[d].agg[ms]=(dimAggSh[d].agg[ms]||0)+hl;
+    dimAggSh[d].totHl+=hl;
+  }
+  const allD=Object.keys(dimAggSh).sort((a,b)=>dimAggSh[b].totHl-dimAggSh[a].totHl);
+  const top10=allD.slice(0,10);
+  window._tTop8=top10; window._tCC=top10.map((_,i)=>CC[i%CC.length]);
   document.getElementById('t-share-title').textContent='Evolución share % · '+tDim;
-  mkC('t-share-line',{type:'line',data:{labels:mL,datasets:top8.map((d,i)=>({label:d,data:meses.map(m=>{const[y,mo]=m.split('-');const md=data.filter(r=>String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));const tot=md.reduce((s,r)=>s+nv(r['Hectolitros']),0);const dHL=md.filter(r=>(r[tDim]||'Sin datos')===d).reduce((s,r)=>s+nv(r['Hectolitros']),0);return tot>0?parseFloat((dHL/tot*100).toFixed(2)):0;}),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3}))},options:{...CO,scales:{y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%',font:{size:10},color:'#8492A6'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8492A6',maxRotation:45,autoSkip:false}}}}});
-  document.getElementById('t-share-leg').innerHTML=top8.map((d,i)=>`<span class="leg-i"><span class="leg-d" style="background:${CC[i%CC.length]}"></span>${d}</span>`).join('');
-  // Numbers table below share chart
+  mkC('t-share-line',{type:'line',data:{labels:mL,datasets:top10.map((d,i)=>({label:d,data:meses.map(m=>{const tot=periodTotSh[m]||0;const dHL=(dimAggSh[d]&&dimAggSh[d].agg[m])||0;return tot>0?parseFloat((dHL/tot*100).toFixed(2)):0;}),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3}))},options:{...CO,scales:{y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>v+'%',font:{size:10},color:'#8492A6'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8492A6',maxRotation:45,autoSkip:false}}}}});
+  document.getElementById('t-share-leg').innerHTML=top10.map((d,i)=>`<span class="leg-i"><span class="leg-d" style="background:${CC[i%CC.length]}"></span>${d}</span>`).join('');
+  // Numbers table below share chart - ALL marcas, using precomputed aggregates
   const tsd=document.getElementById('t-share-data');
   if(tsd){
-    // Group by year, expandable months
     const years=[...new Set(meses.map(m=>m.split('-')[0]))].sort();
-    let ht=`<table class="tbl" style="margin-top:8px"><thead><tr><th>Año / Mes</th>${top8.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>`;
+    function yrTot(ms_prefix){let s=0;for(const ms in periodTotSh){if(ms.indexOf(ms_prefix)===0)s+=periodTotSh[ms];}return s;}
+    function dimYrSum(d,ms_prefix){const agg=dimAggSh[d]?dimAggSh[d].agg:{};let s=0;for(const ms in agg){if(ms.indexOf(ms_prefix)===0)s+=agg[ms];}return s;}
+    let ht=`<table class="tbl" style="margin-top:8px"><thead><tr><th>Año / Mes</th>${allD.map(d=>`<th>${d}</th>`).join('')}</tr></thead><tbody>`;
     years.forEach((yr,yi)=>{
       const yMeses=meses.filter(m=>m.split('-')[0]===yr);
-      // Year summary row
-      const yTot=data.filter(r=>String(r['Año'])===yr).reduce((s,r)=>s+nv(r['Hectolitros']),0);
+      const yTot=yrTot(yr+'-');
       const yid='tsh'+yi;
-      ht+=`<tr class="tr0 tr-tog" onclick="togAlA('${yid}')"><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${yr}</td>${top8.map(d=>{const dHL=data.filter(r=>String(r['Año'])===yr&&(r[tDim]||'Sin datos')===d).reduce((s,r)=>s+nv(r['Hectolitros']),0);const sh=yTot>0?(dHL/yTot*100).toFixed(1):'0.0';return`<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${sh}%</td>`;}).join('')}</tr>`;
+      ht+=`<tr class="tr0 tr-tog" onclick="togAlA('${yid}')"><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${yr}</td>${allD.map(d=>{const dHL=dimYrSum(d,yr+'-');const sh=yTot>0?(dHL/yTot*100).toFixed(1):'0.0';return`<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${sh}%</td>`;}).join('')}</tr>`;
       yMeses.forEach(m=>{
         const[y,mo]=m.split('-');
-        const tot=data.filter(r=>String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))).reduce((s,r)=>s+nv(r['Hectolitros']),0);
-        ht+=`<tr class="${yid}-child tr1" style="display:none"><td style="padding:6px 12px 6px 24px;border-bottom:1px solid #F4F5F7">${MN[parseInt(mo)]}</td>${top8.map(d=>{const dHL=data.filter(r=>String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&(r[tDim]||'Sin datos')===d).reduce((s,r)=>s+nv(r['Hectolitros']),0);const sh=tot>0?(dHL/tot*100).toFixed(1):'0.0';return`<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">${sh}%</td>`;}).join('')}</tr>`;
+        const tot=periodTotSh[m]||0;
+        ht+=`<tr class="${yid}-child tr1" style="display:none"><td style="padding:6px 12px 6px 24px;border-bottom:1px solid #F4F5F7">${MN[parseInt(mo)]}</td>${allD.map(d=>{const dHL=(dimAggSh[d]&&dimAggSh[d].agg[m])||0;const sh=tot>0?(dHL/tot*100).toFixed(1):'0.0';return`<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">${sh}%</td>`;}).join('')}</tr>`;
       });
     });
     ht+='</tbody></table>';
     tsd.innerHTML=ht;
   }
   const tHL=data.reduce((s,r)=>s+nv(r['Hectolitros']),0),tIng=data.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
-  document.getElementById('t-kpis').innerHTML=`<div class="kpi"><div class="kpi-lbl">Total Hl</div><div class="kpi-val">${tHL.toFixed(2)}</div></div><div class="kpi"><div class="kpi-lbl">Meses</div><div class="kpi-val">${meses.length}</div></div><div class="kpi"><div class="kpi-lbl">Prom Hl/mes</div><div class="kpi-val">${meses.length>0?(tHL/meses.length).toFixed(2):'—'}</div></div><div class="kpi gold"><div class="kpi-lbl">Ingresos</div><div class="kpi-val">${tIng.toLocaleString('es-BO',{maximumFractionDigits:0})}</div></div>`;
-  const ins=[];
-  if(meses.length>=3){const hp=meses.map(m=>{const[y,mo]=m.split('-');return data.filter(r=>String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))).reduce((s,r)=>s+nv(r['Hectolitros']),0);});const u3=hp.slice(-3);if(u3[2]<u3[1]&&u3[1]<u3[0])ins.push({t:'danger',txt:'⚠ 3 meses consecutivos en caída.'});if(u3[2]>u3[1]&&u3[1]>u3[0])ins.push({t:'success',txt:'✓ 3 meses consecutivos creciendo.'});}
-  document.getElementById('t-ins').innerHTML=ins.map(i=>`<div class="ins ${i.t}">${i.txt}</div>`).join('');
+
   renderTPrecio();
-  document.getElementById('t-tbl').innerHTML=`<table class="tbl"><thead><tr><th>Mes</th><th>Hl</th><th>Ingresos Bs</th><th>Unidades</th></tr></thead><tbody>${meses.map(m=>{const[y,mo]=m.split('-');const md=data.filter(r=>String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));const hl=md.reduce((s,r)=>s+nv(r['Hectolitros']),0),ing=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0),qty=md.reduce((s,r)=>s+nv(r['QtyVnt']),0);return`<tr><td><strong>${MN[parseInt(mo)]} ${y}</strong></td><td>${hl.toFixed(2)}</td><td>${ing.toLocaleString('es-BO',{maximumFractionDigits:0})}</td><td>${qty.toLocaleString()}</td></tr>`;}).join('')}</tbody></table>`;
   renderCompChecks();
   if(document.getElementById("comp-sel-base")?.value)renderComp();
   renderPVolChart();
+  renderTMetric();
 }
 
 // ===== COMPARATIVO =====
@@ -1164,17 +1185,19 @@ function SL(){
   const data=filt('sl');
   const hasMoM_sl=!!an&&!!ms1;
   const{a:mA,m:mM}=getMoM(an,ms1);const dMoM=hasMoM_sl?filtP('sl',mA,mM):[];
-  const tHL=data.reduce((s,r)=>s+nv(r['Hectolitros']),0),filas=grp(data,'Salas').slice(0,15);
-  const top3=filas.slice(0,3).reduce((s,f)=>s+f[1].hl,0);
-  document.getElementById('sl-kpis').innerHTML=`<div class="kpi"><div class="kpi-lbl">Total salas</div><div class="kpi-val">${filas.length}</div></div><div class="kpi gold"><div class="kpi-lbl">Sala líder</div><div class="kpi-val" style="font-size:13px">${filas[0]?filas[0][0]:'—'}</div></div><div class="kpi"><div class="kpi-lbl">Top 3 conc.</div><div class="kpi-val">${tHL>0?(top3/tHL*100).toFixed(1)+'%':'—'}</div></div><div class="kpi"><div class="kpi-lbl">Total Hl</div><div class="kpi-val">${tHL.toFixed(2)}</div></div><div class="kpi"><div class="kpi-lbl">Precio (Emp.1)</div><div class="kpi-val">Bs ${pu1(data).toFixed(2)}</div></div>`;
+  const tHL=data.reduce((s,r)=>s+nv(r['Hectolitros']),0);
+  const allSalas=grp(data,'Salas'); // FULL list, no cap
+  const filas=allSalas.slice(0,10); // chart only: top 10
+  const top3=allSalas.slice(0,3).reduce((s,f)=>s+f[1].hl,0);
+  document.getElementById('sl-kpis').innerHTML=`<div class="kpi"><div class="kpi-lbl">Total salas</div><div class="kpi-val">${allSalas.length}</div></div><div class="kpi gold"><div class="kpi-lbl">Sala líder</div><div class="kpi-val" style="font-size:13px">${allSalas[0]?allSalas[0][0]:'—'}</div></div><div class="kpi"><div class="kpi-lbl">Top 3 conc.</div><div class="kpi-val">${tHL>0?(top3/tHL*100).toFixed(1)+'%':'—'}</div></div><div class="kpi"><div class="kpi-lbl">Total Hl</div><div class="kpi-val">${tHL.toFixed(2)}</div></div><div class="kpi"><div class="kpi-lbl">Precio (Emp.1)</div><div class="kpi-val">Bs ${pu1(data).toFixed(2)}</div></div>`;
   mkC('sl-bar',{type:'bar',data:{labels:filas.map(f=>f[0]),datasets:[{data:filas.map(f=>f[1].hl),backgroundColor:filas.map((_,i)=>CC[i%CC.length]),borderRadius:3,borderSkipped:false}]},options:{...CO,scales:{y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:10},color:'#8492A6'}},x:{grid:{display:false},ticks:{font:{size:10},color:'#8492A6',maxRotation:30}}},plugins:{...CO.plugins,tooltip:{...CO.plugins.tooltip,callbacks:{label:c=>`${c.raw.toFixed(2)} Hl (${tHL>0?(c.raw/tHL*100).toFixed(1):0}%)`}}}}});
-  const prevM={},currM={};grp(dMoM,'Salas').forEach(([s,v])=>prevM[s]=v.hl);filas.forEach(([s,v])=>currM[s]=v.hl);
+  const prevM={},currM={};grp(dMoM,'Salas').forEach(([s,v])=>prevM[s]=v.hl);allSalas.forEach(([s,v])=>currM[s]=v.hl);
   const allS=[...new Set([...Object.keys(prevM),...Object.keys(currM)])];
   const sG=allS.filter(s=>(currM[s]||0)>(prevM[s]||0)).sort((a,b)=>((currM[b]||0)-(prevM[b]||0))-((currM[a]||0)-(prevM[a]||0))).slice(0,5);
   const sC=allS.filter(s=>(currM[s]||0)<(prevM[s]||0)).sort((a,b)=>((currM[a]||0)-(prevM[a]||0))-((currM[b]||0)-(prevM[b]||0))).slice(0,5);
   document.getElementById('sl-pres').innerHTML=`<div class="gp-card"><div class="gp-hd" style="color:#059669">▲ Salas creciendo</div>${sG.length?sG.map(s=>`<div class="gp-row"><span class="gp-name">${s}</span><span class="tag t-green">+${((currM[s]||0)-(prevM[s]||0)).toFixed(1)} Hl</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:8px 0">Sin datos</div>'}</div><div class="gp-card"><div class="gp-hd" style="color:#DC2626">▼ Salas cayendo</div>${sC.length?sC.map(s=>`<div class="gp-row"><span class="gp-name">${s}</span><span class="tag t-red">${((currM[s]||0)-(prevM[s]||0)).toFixed(1)} Hl</span></div>`).join(''):'<div style="font-size:11px;color:#8492A6;padding:8px 0">Sin datos</div>'}</div>`;
-  const mHL=filas[0]?filas[0][1].hl:1;
-  document.getElementById('sl-tbl').innerHTML=`<table class="tbl"><thead><tr><th>Sala</th><th>Hl</th><th>Share%</th><th>Ingresos Bs</th><th>Marcas</th><th>Precio (Emp.1)</th></tr></thead><tbody>${filas.map(([s,v])=>{const sh=tHL>0?(v.hl/tHL*100).toFixed(1):0;const sd=data.filter(r=>r['Salas']===s);return`<tr><td><strong>${s}</strong></td><td>${v.hl.toFixed(2)}</td><td><span class="tag t-blue">${sh}%</span></td><td>${v.ing.toLocaleString('es-BO',{maximumFractionDigits:0})}</td><td>${[...new Set(sd.map(r=>r['Marca']).filter(Boolean))].length}</td><td>Bs ${pu1(sd).toFixed(2)}</td></tr>`;}).join('')}</tbody></table>`;
+  const mHL=allSalas[0]?allSalas[0][1].hl:1;
+  document.getElementById('sl-tbl').innerHTML=`<table class="tbl"><thead><tr><th>Sala</th><th>Hl</th><th>Share%</th><th>Ingresos Bs</th><th>Marcas</th><th>Precio (Emp.1)</th></tr></thead><tbody>${allSalas.map(([s,v])=>{const sh=tHL>0?(v.hl/tHL*100).toFixed(1):0;const sd=data.filter(r=>r['Salas']===s);return`<tr><td><strong>${s}</strong></td><td>${v.hl.toFixed(2)}</td><td><span class="tag t-blue">${sh}%</span></td><td>${v.ing.toLocaleString('es-BO',{maximumFractionDigits:0})}</td><td>${[...new Set(sd.map(r=>r['Marca']).filter(Boolean))].length}</td><td>Bs ${pu1(sd).toFixed(2)}</td></tr>`;}).join('')}</tbody></table>`;
 }
 
 // ===== SKUS =====
@@ -1187,7 +1210,7 @@ function SK(){
   const est=filas.filter(f=>{const sh=tHL>0?f.hl/tHL*100:0,pu=f.qE1>0?f.iE1/f.qE1:0;return sh>2&&pu>avgPU;});
   document.getElementById('sk-kpis').innerHTML=`<div class="kpi"><div class="kpi-lbl">Total SKUs</div><div class="kpi-val">${filas.length}</div></div><div class="kpi gold"><div class="kpi-lbl">SKU #1</div><div class="kpi-val" style="font-size:12px">${filas[0]?filas[0].sku.substring(0,20):'—'}</div></div><div class="kpi"><div class="kpi-lbl">Top 5 conc.</div><div class="kpi-val">${tHL>0?(top5.reduce((s,f)=>s+f.hl,0)/tHL*100).toFixed(1)+'%':'—'}</div></div><div class="kpi red"><div class="kpi-lbl">Bajo desempeño</div><div class="kpi-val" style="color:#DC2626">${lowP.length}</div></div>`;
   document.getElementById('sk-cls').innerHTML=`<div class="gp-card"><div class="gp-hd" style="color:#059669">▲ Top sellers</div>${top5.map(f=>`<div class="gp-row"><span class="gp-name" style="font-size:11px">${f.sku.substring(0,22)}</span><span class="tag t-blue">${tHL>0?(f.hl/tHL*100).toFixed(1):0}%</span></div>`).join('')}</div><div class="gp-card"><div class="gp-hd" style="color:#2563EB">★ Estrellas</div>${est.slice(0,5).map(f=>`<div class="gp-row"><span class="gp-name" style="font-size:11px">${f.sku.substring(0,22)}</span><span class="tag t-green">${tHL>0?(f.hl/tHL*100).toFixed(1):0}%</span></div>`).join('')||'<div style="font-size:11px;color:#8492A6;padding:6px 0">Sin datos</div>'}</div><div class="gp-card"><div class="gp-hd" style="color:#DC2626">▼ Bajo desempeño</div>${lowP.slice(0,5).map(f=>`<div class="gp-row"><span class="gp-name" style="font-size:11px">${f.sku.substring(0,22)}</span><span class="tag t-red">${tHL>0?(f.hl/tHL*100).toFixed(2):0}%</span></div>`).join('')||'<div style="font-size:11px;color:#8492A6;padding:6px 0">Ninguno</div>'}</div>`;
-  document.getElementById('sk-tbl').innerHTML=`<table class="tbl"><thead><tr><th>#</th><th>SKU</th><th>Marca</th><th>Hl</th><th>Share%</th><th>Precio/u Emp.1</th><th>Unidades</th><th>Tipo</th></tr></thead><tbody>${filas.slice(0,25).map((f,i)=>{const sh=tHL>0?(f.hl/tHL*100).toFixed(2):0;const pu=f.qE1>0?(f.iE1/f.qE1).toFixed(2):'—';const puN=f.qE1>0?f.iE1/f.qE1:0;let cls='t-gray',lbl='Normal';if(i<5){cls='t-green';lbl='Top seller';}else if(tHL>0&&f.hl/tHL<0.005){cls='t-red';lbl='Bajo desempeño';}else if(puN>avgPU&&tHL>0&&f.hl/tHL*100>2){cls='t-blue';lbl='Estrella';}return`<tr><td style="color:#8492A6;font-weight:700">${i+1}</td><td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.sku}</td><td>${f.marca}</td><td>${f.hl.toFixed(2)}</td><td><span class="tag t-blue">${sh}%</span></td><td>Bs ${pu}</td><td>${f.qty.toLocaleString()}</td><td><span class="tag ${cls}">${lbl}</span></td></tr>`;}).join('')}</tbody></table>`;
+  document.getElementById('sk-tbl').innerHTML=`<table class="tbl"><thead><tr><th>#</th><th>SKU</th><th>Marca</th><th>Hl</th><th>Share%</th><th>Precio/u Emp.1</th><th>Unidades</th><th>Tipo</th></tr></thead><tbody>${filas.map((f,i)=>{const sh=tHL>0?(f.hl/tHL*100).toFixed(2):0;const pu=f.qE1>0?(f.iE1/f.qE1).toFixed(2):'—';const puN=f.qE1>0?f.iE1/f.qE1:0;let cls='t-gray',lbl='Normal';if(i<5){cls='t-green';lbl='Top seller';}else if(tHL>0&&f.hl/tHL<0.005){cls='t-red';lbl='Bajo desempeño';}else if(puN>avgPU&&tHL>0&&f.hl/tHL*100>2){cls='t-blue';lbl='Estrella';}return`<tr><td style="color:#8492A6;font-weight:700">${i+1}</td><td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.sku}</td><td>${f.marca}</td><td>${f.hl.toFixed(2)}</td><td><span class="tag t-blue">${sh}%</span></td><td>Bs ${pu}</td><td>${f.qty.toLocaleString()}</td><td><span class="tag ${cls}">${lbl}</span></td></tr>`;}).join('')}</tbody></table>`;
 }
 
 // ===== ALERTAS =====
@@ -1378,7 +1401,7 @@ function A(){
         +'<td style="padding:8px 12px"><span class="tag t-blue">'+sh.toFixed(1)+'%</span></td>'
         +'<td style="padding:8px 12px;font-size:11px;font-weight:600;color:'+(mom!==null?cHl(mom):'#8492A6')+'">'+(mom!==null?(mom>0?'▲ +':'▼ ')+Math.abs(mom).toFixed(2)+'pp':'—')+'</td>'
         +'<td style="padding:8px 12px">'+mTag(v.ing/Math.max(v.hl,1),prev?prev.ing/Math.max(prev.hl,1):0)+'</td></tr>';
-      Object.entries(v.sk).sort(function(a,b){return b[1].hl-a[1].hl;}).slice(0,20).forEach(function(se){
+      Object.entries(v.sk).sort(function(a,b){return b[1].hl-a[1].hl;}).forEach(function(se){
         var sk=se[0],sv=se[1];
         var skSh=totHL>0?sv.hl/totHL*100:0;
         t+='<tr class="'+pid+'-child tr1" style="display:none">'
@@ -1755,39 +1778,7 @@ function sortACSala(col){
   renderACSalaRows();
 }
 
-function renderPVolChart(){
-  const data=filt('t');
-  if(!data.length)return;
-  const meses=getMeses(data);
-  const mLs=meses.map(m=>{const[y,mo]=m.split('-');return MN[parseInt(mo)]+' '+y.slice(2);});
-  // Get top 5 marcas by total Hl
-  const topMarcas=grp(data,'Marca').slice(0,5).map(e=>e[0]);
-  // Build datasets
-  const precioDS=topMarcas.map((m,i)=>({
-    label:m,
-    data:meses.map(ms=>{
-      const[y,mo]=ms.split('-');
-      const md=data.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&String(r['Empaque'])==='1');
-      const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
-      return q>0?parseFloat((g/q).toFixed(2)):null;
-    }),
-    borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
-  }));
-  const volDS=topMarcas.map((m,i)=>({
-    label:m,
-    data:meses.map(ms=>{
-      const[y,mo]=ms.split('-');
-      const md=data.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));
-      return parseFloat(md.reduce((s,r)=>s+nv(r['Hectolitros']),0).toFixed(2));
-    }),
-    borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'22',fill:true,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
-  }));
-  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',titleColor:'rgba(255,255,255,.7)',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:12}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#8492A6'}}}};
-  mkC('pvol-precio-chart',{type:'line',data:{labels:mLs,datasets:precioDS},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'Bs '+v}}}}});
-  mkC('pvol-vol-chart',{type:'line',data:{labels:mLs,datasets:volDS},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>v+' Hl'}}}}});
-  const leg=document.getElementById('pvol-leg');
-  if(leg)leg.innerHTML=topMarcas.map((m,i)=>'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>').join('');
-}
+
 
 // ===== MULTI-SELECT MARCA =====
 function toggleMarca(p){
@@ -1878,39 +1869,7 @@ function _doRefreshMarca(p){
 }
 
 // ===== PRECIO vs VOLUMEN CHART =====
-function renderPVolChart(){
-  const data=filt('t'); // always use tendencia filters
-  if(!data.length)return;
-  const meses=getMeses(data);
-  const mLs=meses.map(m=>{const[y,mo]=m.split('-');return MN[parseInt(mo)]+' '+y.slice(2);});
-  // Top 5 marcas by volume
-  const marcaSel=getMarcaSel('p');
-  const marcas=marcaSel.length?marcaSel:grp(data,'Marca').slice(0,5).map(e=>e[0]);
-  const precioDS=marcas.map((m,i)=>({
-    label:m,
-    data:meses.map(ms=>{
-      const[y,mo]=ms.split('-');
-      const md=data.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo))&&String(r['Empaque'])==='1');
-      const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
-      return q>0?parseFloat((g/q).toFixed(2)):null;
-    }),
-    borderColor:CC[i]||CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
-  }));
-  const volDS=marcas.map((m,i)=>({
-    label:m,
-    data:meses.map(ms=>{
-      const[y,mo]=ms.split('-');
-      const md=data.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));
-      return parseFloat(md.reduce((s,r)=>s+nv(r['Hectolitros']),0).toFixed(2));
-    }),
-    borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'22',fill:true,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
-  }));
-  const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',titleColor:'rgba(255,255,255,.7)',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:12}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#8492A6'}}}};
-  mkC('p-pvol-precio',{type:'line',data:{labels:mLs,datasets:precioDS},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>'Bs '+v}}}}});
-  mkC('p-pvol-vol',{type:'line',data:{labels:mLs,datasets:volDS},options:{...baseOpts,scales:{...baseOpts.scales,y:{...baseOpts.scales.y,ticks:{...baseOpts.scales.y.ticks,callback:v=>v+' Hl'}}}}});
-  const leg=document.getElementById('p-pvol-leg');
-  if(leg)leg.innerHTML=marcas.map((m,i)=>'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>').join('');
-}
+
 
 // ===== ANNO MULTI-SELECT =====
 function toggleAnno(p){
@@ -1967,19 +1926,20 @@ function renderRGL(){
   const mLs=glD2.mL||'MoM',yLs=glD2.yL||'YoY';
   const mRows=Object.keys(iC).map(ma=>{const s=shR(ma,null,null,null);return{ma,...s};});
   mRows.sort((a,b)=>{const va=a[glD2.sKey]??-999,vb=b[glD2.sKey]??-999;return glD2.sAsc?va-vb:vb-va;});
-  let h=`<table class="tbl"><thead><tr><th>Marca / Calibre / Empaque / SKU</th><th>Share actual</th><th>Share ${mLs}</th><th>Δ MoM</th><th>Share ${yLs}</th><th>Δ YoY</th><th>Movimiento</th></tr></thead><tbody>`;
+  function semIcon(d){return d!==null&&d!==undefined&&d>0.3?'🟢':d!==null&&d!==undefined&&d<-0.3?'🔴':'🟡';}
+  let h=`<table class="tbl"><thead><tr><th style="text-align:center;width:36px">🚦</th><th>Marca / Calibre / Empaque / SKU</th><th>Share actual</th><th>Share ${mLs}</th><th>Δ MoM</th><th>Share ${yLs}</th><th>Δ YoY</th><th>Movimiento</th></tr></thead><tbody>`;
   mRows.forEach((mr,mi)=>{
     const g=`r${mi}`;
-    h+=`<tr class="tr0 tr-tog" onclick="togR2('${g}')"><td>▶ ${mr.ma}</td><td>${mr.cSh.toFixed(1)}%</td><td>${mr.shP!==null?mr.shP.toFixed(1)+'%':'—'}</td><td>${ppT(mr.dM)}</td><td>${mr.shY!==null?mr.shY.toFixed(1)+'%':'—'}</td><td>${ppT(mr.dY)}</td><td style="font-size:10px">${movT(mr.dM,mr.dY)}</td></tr>`;
+    h+=`<tr class="tr0 tr-tog" onclick="togR2('${g}')"><td style="text-align:center;font-size:18px">${semIcon(mr.dM)}</td><td>▶ ${mr.ma}</td><td>${mr.cSh.toFixed(1)}%</td><td>${mr.shP!==null?mr.shP.toFixed(1)+'%':'—'}</td><td>${ppT(mr.dM)}</td><td>${mr.shY!==null?mr.shY.toFixed(1)+'%':'—'}</td><td>${ppT(mr.dY)}</td><td style="font-size:10px">${movT(mr.dM,mr.dY)}</td></tr>`;
     Object.keys(iC[mr.ma].cal||{}).forEach((cal,ci)=>{
       const cg=`${g}_${ci}`,cs=shR(mr.ma,cal,null,null);
-      h+=`<tr id="${g}_r_${ci}" class="tr-hide tr1 tr-tog" onclick="togR2('${cg}')"><td style="padding-left:18px">▶ ${cal}</td><td>${cs.cSh.toFixed(1)}%</td><td>${cs.shP!==null?cs.shP.toFixed(1)+'%':'—'}</td><td>${ppT(cs.dM)}</td><td>${cs.shY!==null?cs.shY.toFixed(1)+'%':'—'}</td><td>${ppT(cs.dY)}</td><td style="font-size:10px">${movT(cs.dM,cs.dY)}</td></tr>`;
+      h+=`<tr id="${g}_r_${ci}" class="tr-hide tr1 tr-tog" onclick="togR2('${cg}')"><td style="text-align:center;font-size:16px">${semIcon(cs.dM)}</td><td style="padding-left:18px">▶ ${cal}</td><td>${cs.cSh.toFixed(1)}%</td><td>${cs.shP!==null?cs.shP.toFixed(1)+'%':'—'}</td><td>${ppT(cs.dM)}</td><td>${cs.shY!==null?cs.shY.toFixed(1)+'%':'—'}</td><td>${ppT(cs.dY)}</td><td style="font-size:10px">${movT(cs.dM,cs.dY)}</td></tr>`;
       Object.keys((iC[mr.ma].cal[cal]||{}).emp||{}).forEach((emp,ei)=>{
         const eg=`${cg}_${ei}`,es=shR(mr.ma,cal,emp,null);
-        h+=`<tr id="${cg}_r_${ei}" class="tr-hide tr2 tr-tog" onclick="togR2('${eg}')"><td style="padding-left:34px">▶ Emp ${emp}</td><td>${es.cSh.toFixed(1)}%</td><td>${es.shP!==null?es.shP.toFixed(1)+'%':'—'}</td><td>${ppT(es.dM)}</td><td>${es.shY!==null?es.shY.toFixed(1)+'%':'—'}</td><td>${ppT(es.dY)}</td><td style="font-size:10px">${movT(es.dM,es.dY)}</td></tr>`;
+        h+=`<tr id="${cg}_r_${ei}" class="tr-hide tr2 tr-tog" onclick="togR2('${eg}')"><td style="text-align:center;font-size:14px">${semIcon(es.dM)}</td><td style="padding-left:34px">▶ Emp ${emp}</td><td>${es.cSh.toFixed(1)}%</td><td>${es.shP!==null?es.shP.toFixed(1)+'%':'—'}</td><td>${ppT(es.dM)}</td><td>${es.shY!==null?es.shY.toFixed(1)+'%':'—'}</td><td>${ppT(es.dY)}</td><td style="font-size:10px">${movT(es.dM,es.dY)}</td></tr>`;
         Object.keys(((iC[mr.ma].cal[cal]||{}).emp||{})[emp]?.sku||{}).forEach((sku,si)=>{
           const ss=shR(mr.ma,cal,emp,sku);
-          h+=`<tr id="${eg}_r_${si}" class="tr-hide tr2"><td style="padding-left:50px;font-size:10px">└ ${sku.substring(0,35)}</td><td>${ss.cSh.toFixed(2)}%</td><td>${ss.shP!==null?ss.shP.toFixed(2)+'%':'—'}</td><td>${ppT(ss.dM)}</td><td>${ss.shY!==null?ss.shY.toFixed(2)+'%':'—'}</td><td>${ppT(ss.dY)}</td><td style="font-size:10px">${movT(ss.dM,ss.dY)}</td></tr>`;
+          h+=`<tr id="${eg}_r_${si}" class="tr-hide tr2"><td style="text-align:center;font-size:12px">${semIcon(ss.dM)}</td><td style="padding-left:50px;font-size:10px">└ ${sku.substring(0,35)}</td><td>${ss.cSh.toFixed(2)}%</td><td>${ss.shP!==null?ss.shP.toFixed(2)+'%':'—'}</td><td>${ppT(ss.dM)}</td><td>${ss.shY!==null?ss.shY.toFixed(2)+'%':'—'}</td><td>${ppT(ss.dY)}</td><td style="font-size:10px">${movT(ss.dM,ss.dY)}</td></tr>`;
         });
       });
     });
@@ -2000,38 +1960,45 @@ function renderTPrecio(){
   const filtE=emp?data.filter(r=>String(r['Empaque'])===emp):data;
   const meses=getMeses(filtE);
   const mLs=meses.map(m=>{const[y,mo]=m.split('-');return MN[parseInt(mo)]+' '+y.slice(2);});
-  const top8=grp(filtE,'Marca').slice(0,8).map(e=>e[0]);
-  const ds=top8.map((m,i)=>({
+  // ===== Single-pass aggregation: marca -> period -> {qty,ing} =====
+  const mAgg={};
+  for(let ri=0;ri<filtE.length;ri++){
+    const r=filtE[ri];
+    const ms=String(r['Año'])+'-'+String(parseInt(r['Mes'])).padStart(2,'0');
+    const m=r['Marca']||'Sin marca';
+    const qty=nv(r['QtyVnt']),ing=nv(r['Ingreso (Bs)']);
+    if(!mAgg[m])mAgg[m]={agg:{},totHl:0};
+    const a=mAgg[m].agg[ms]||(mAgg[m].agg[ms]={qty:0,ing:0});
+    a.qty+=qty;a.ing+=ing;
+    mAgg[m].totHl+=nv(r['Hectolitros']);
+  }
+  const allM=Object.keys(mAgg).sort((a,b)=>mAgg[b].totHl-mAgg[a].totHl);
+  const top10=allM.slice(0,10);
+  function puAt(m,ms){const a=mAgg[m]&&mAgg[m].agg[ms];return a&&a.qty>0?parseFloat((a.ing/a.qty).toFixed(2)):null;}
+  function puYr(m,yr){const agg=mAgg[m]?mAgg[m].agg:{};let q=0,g=0;for(const ms in agg){if(ms.indexOf(yr+'-')===0){q+=agg[ms].qty;g+=agg[ms].ing;}}return q>0?(g/q).toFixed(2):'—';}
+  const ds=top10.map((m,i)=>({
     label:m,
-    data:meses.map(ms=>{
-      const[y,mo]=ms.split('-');
-      const md=filtE.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));
-      const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
-      return q>0?parseFloat((g/q).toFixed(2)):null;
-    }),
+    data:meses.map(ms=>puAt(m,ms)),
     borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true
   }));
   mkC('t-precio-line',{type:'line',data:{labels:mLs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:12}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{callback:v=>'Bs '+v,font:{size:9},color:'#8492A6'}}}}});
   const leg=document.getElementById('t-precio-leg');
-  if(leg)leg.innerHTML=top8.map((m,i)=>`<span class="leg-i"><span class="leg-d" style="background:${CC[i%CC.length]}"></span>${m}</span>`).join('');
-  // Table below
+  if(leg)leg.innerHTML=top10.map((m,i)=>`<span class="leg-i"><span class="leg-d" style="background:${CC[i%CC.length]}"></span>${m}</span>`).join('');
+  // Table below - ALL marcas, using precomputed aggregates
   const td=document.getElementById('t-precio-data');
   if(td){
     const years2=[...new Set(meses.map(m=>m.split('-')[0]))].sort();
-    let h=`<table class="tbl" style="margin-top:8px"><thead><tr><th>Año / Mes</th>${top8.map(m=>`<th>${m}</th>`).join('')}</tr></thead><tbody>`;
+    let h=`<table class="tbl" style="margin-top:8px"><thead><tr><th>Año / Mes</th>${allM.map(m=>`<th>${m}</th>`).join('')}</tr></thead><tbody>`;
     years2.forEach((yr,yi)=>{
       const yMeses2=meses.filter(m=>m.split('-')[0]===yr);
       const pid2='tpr'+yi;
-      // Year avg row
-      h+=`<tr class="tr0 tr-tog" onclick="togAlA('${pid2}')"><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${yr}</td>${top8.map(m=>{const md=filtE.filter(r=>r['Marca']===m&&String(r['Año'])===yr);const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);const pu=q>0?(g/q).toFixed(2):'—';return`<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${pu!=='—'?'Bs '+pu:'—'}</td>`;}).join('')}</tr>`;
+      h+=`<tr class="tr0 tr-tog" onclick="togAlA('${pid2}')"><td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:700">▶ ${yr}</td>${allM.map(m=>{const pu=puYr(m,yr);return`<td style="padding:8px 12px;border-bottom:1px solid #F4F5F7;font-weight:600">${pu!=='—'?'Bs '+pu:'—'}</td>`;}).join('')}</tr>`;
       yMeses2.forEach((ms,mi)=>{
         const[y,mo]=ms.split('-');
         h+=`<tr class="${pid2}-child tr1" style="display:none"><td style="padding:6px 12px 6px 24px;border-bottom:1px solid #F4F5F7">${MN[parseInt(mo)]}</td>`;
-        top8.forEach(m=>{
-          const md=filtE.filter(r=>r['Marca']===m&&String(r['Año'])===y&&String(r['Mes'])===String(parseInt(mo)));
-          const q=md.reduce((s,r)=>s+nv(r['QtyVnt']),0),g=md.reduce((s,r)=>s+nv(r['Ingreso (Bs)']),0);
-          const pu=q>0?(g/q).toFixed(2):'—';
-          h+=`<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">${pu!=='—'?'Bs '+pu:'—'}</td>`;
+        allM.forEach(m=>{
+          const pu=puAt(m,ms);
+          h+=`<td style="padding:6px 12px;border-bottom:1px solid #F4F5F7">${pu!==null?'Bs '+pu.toFixed(2):'—'}</td>`;
         });
         h+='</tr>';
       });
@@ -2067,6 +2034,218 @@ function exportPage(btn){
 
 
 
+
+// ===== METRIC EVOLUTION CHART =====
+var _tMetric='Hectolitros';
+function setTMetric(metric,btn){
+  _tMetric=metric;
+  btn.closest('.dims').querySelectorAll('.db').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  renderTMetric();
+}
+function renderTMetric(){
+  var emp=gv('t-metric-emp');
+  var data=filt('t');
+  if(!data.length)return;
+  var filtD=emp?data.filter(function(r){return String(r['Empaque'])===emp;}):data;
+  var empSel=document.getElementById('t-metric-emp');
+  if(empSel){
+    var cur=empSel.value;
+    var emps=[...new Set(data.map(function(r){return r['Empaque'];}).filter(function(v){return v!=null;}))].sort(function(a,b){return parseInt(a)-parseInt(b);});
+    empSel.innerHTML='<option value="">Todos</option>';
+    emps.forEach(function(e){var o=document.createElement('option');o.value=e;o.textContent='Emp. '+e;empSel.appendChild(o);});
+    empSel.value=cur;
+    var newEmp=gv('t-metric-emp');
+    filtD=newEmp?data.filter(function(r){return String(r['Empaque'])===newEmp;}):data;
+  }
+  var isShare=_tMetric==='share';
+  var meses=getMeses(filtD);
+  var mLs=meses.map(function(m){var p=m.split('-');return MN[parseInt(p[1])]+' '+p[0].slice(2);});
+  var lbl={'Hectolitros':'Hl','QtyVnt':'Unidades','share':'Share %','Ingreso (Bs)':'Bs'}[_tMetric]||_tMetric;
+
+  // ===== DIMENSION ORDER UI (drag & drop) =====
+  if(!window._tDimOrder)window._tDimOrder=['Marca','Calibre','Empaque','Sabor'];
+  var dimOrder=window._tDimOrder;
+  var dimKeyMap={'Marca':'Marca','Calibre':'Calibre','Empaque':'Empaque','Sabor':'Sabor'};
+  var dimWrap=document.getElementById('t-metric-dimorder');
+  if(dimWrap){
+    dimWrap.innerHTML=dimOrder.map(function(d,i){
+      return'<div class="dim-chip" draggable="true" data-dim="'+d+'" data-idx="'+i+'"><span class="dim-handle">&#8942;&#8942;</span>'+d+'</div>';
+    }).join('')+'<span style="color:#8492A6;font-size:13px">&#8594;</span><div class="dim-chip-sku">SKU</div>';
+    // Wire drag events
+    var chips=dimWrap.querySelectorAll('.dim-chip');
+    chips.forEach(function(chip){
+      chip.addEventListener('dragstart',function(e){
+        window._dragDim=chip.dataset.dim;
+        chip.classList.add('dragging');
+        e.dataTransfer.effectAllowed='move';
+      });
+      chip.addEventListener('dragend',function(){chip.classList.remove('dragging');});
+      chip.addEventListener('dragover',function(e){e.preventDefault();chip.classList.add('drag-over');});
+      chip.addEventListener('dragleave',function(){chip.classList.remove('drag-over');});
+      chip.addEventListener('drop',function(e){
+        e.preventDefault();
+        chip.classList.remove('drag-over');
+        var fromDim=window._dragDim,toDim=chip.dataset.dim;
+        if(!fromDim||fromDim===toDim)return;
+        var arr=window._tDimOrder;
+        var from=arr.indexOf(fromDim),to=arr.indexOf(toDim);
+        if(from<0||to<0)return;
+        arr.splice(from,1);
+        arr.splice(to,0,fromDim);
+        renderTMetric();
+      });
+    });
+  }
+
+  // ===== SINGLE-PASS AGGREGATION using dynamic dimOrder =====
+  var periodTot={};
+  var tree={};
+  function bump(aggMap,ms,hl,qty,ing){
+    var a=aggMap[ms];
+    if(!a){a={hl:0,qty:0,ing:0};aggMap[ms]=a;}
+    a.hl+=hl;a.qty+=qty;a.ing+=ing;
+  }
+  var fullDims=dimOrder.concat(['SKU']);
+  for(var ri=0;ri<filtD.length;ri++){
+    var r=filtD[ri];
+    var ms=String(r['Año'])+'-'+String(parseInt(r['Mes'])).padStart(2,'0');
+    var hl=nv(r['Hectolitros']),qty=nv(r['QtyVnt']),ing=nv(r['Ingreso (Bs)']);
+    periodTot[ms]=(periodTot[ms]||0)+hl;
+    var node=tree;
+    for(var di=0;di<fullDims.length;di++){
+      var dimName=fullDims[di];
+      var val;
+      if(dimName==='SKU')val=r['SKU']||r['DesProducto']||'Sin SKU';
+      else if(dimName==='Empaque')val=r['Empaque']!=null?String(r['Empaque']):'Sin empaque';
+      else val=r[dimName]||'Sin '+dimName;
+      if(!node[val])node[val]={agg:{},children:{},totHl:0};
+      bump(node[val].agg,ms,hl,qty,ing);
+      node[val].totHl+=hl;
+      node=node[val].children;
+    }
+  }
+
+  // ===== CHART: top-level dim = first in dimOrder =====
+  var topDimVals=Object.keys(tree).sort(function(a,b){
+    return tree[b].totHl-tree[a].totHl;
+  }).slice(0,10);
+  var ds=topDimVals.map(function(m,i){
+    return{label:m,data:meses.map(function(ms){
+      var a=tree[m]?tree[m].agg[ms]:null;
+      if(isShare){var tot=periodTot[ms]||0;return tot>0?parseFloat((a?a.hl/tot*100:0).toFixed(2)):null;}
+      if(!a)return 0;
+      var v=_tMetric==='Hectolitros'?a.hl:_tMetric==='QtyVnt'?a.qty:a.ing;
+      return parseFloat(v.toFixed(2));
+    }),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true};
+  });
+  mkC('t-metric-line',{type:'line',data:{labels:mLs,datasets:ds},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:14}},y:{ticks:{callback:function(v){return isShare?v+'%':v.toLocaleString();},font:{size:9},color:'#8492A6'},grid:{color:'rgba(0,0,0,0.05)'}}}}});
+  var leg=document.getElementById('t-metric-leg');
+  if(leg)leg.innerHTML=topDimVals.map(function(m,i){return'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>';}).join('');
+
+  // ===== PIVOT TABLE: cols=Años>Meses, rows=dimOrder hierarchy>SKU =====
+  var tbl=document.getElementById('t-metric-tbl');
+  if(!tbl)return;
+  var years=[...new Set(meses.map(function(m){return m.split('-')[0];}))].sort();
+  function valFromAgg(aggMap,ms){
+    var a=aggMap[ms];
+    if(isShare){var tot=periodTot[ms]||0;return tot>0?(a?(a.hl/tot*100):0).toFixed(1)+'%':'—';}
+    if(!a)return'0.0';
+    var v=_tMetric==='Hectolitros'?a.hl:_tMetric==='QtyVnt'?a.qty:a.ing;
+    return v.toFixed(1);
+  }
+  function yearSum(aggMap,yr){
+    if(isShare)return'—';
+    var s=0;
+    for(var ms in aggMap){if(ms.indexOf(yr+'-')===0){var a=aggMap[ms];s+=(_tMetric==='Hectolitros'?a.hl:_tMetric==='QtyVnt'?a.qty:a.ing);}}
+    return s.toFixed(1);
+  }
+  var ht='<table class="tbl" style="font-size:10px;white-space:nowrap"><thead><tr><th style="min-width:170px;position:sticky;left:0;background:#1C2B4A;z-index:2">'+dimOrder[0]+' / Detalle</th>';
+  years.forEach(function(yr,yi){
+    var yMeses=meses.filter(function(m){return m.indexOf(yr+'-')===0;});
+    var pid='tmy'+yi;
+    ht+='<th class="yr-hdr" data-pid="'+pid+'" style="cursor:pointer;text-align:center;background:#1C2B4A">&#9658; '+yr+'</th>';
+    yMeses.forEach(function(ms){var p=ms.split('-');ht+='<th class="'+pid+'-col" style="display:none;text-align:right;background:#1C2B4A">'+MN[parseInt(p[1])]+'</th>';});
+  });
+  ht+='</tr></thead><tbody>';
+
+  function rowHtml(label,agg,depth,pid,pclass,clickable){
+    var pad=12+depth*12;
+    var arrow=clickable?'&#9658; ':'&#9492; ';
+    var trCls=clickable?'tr-tog':'';
+    var trAttr=clickable?' onclick="togAlA(this.id)"':'';
+    var s='<tr class="'+(pclass?pclass+'-child ':'')+'tr'+Math.min(depth,3)+' '+trCls+'" id="'+pid+'"'+(pclass?' style="display:none"':'')+trAttr+'>';
+    s+='<td style="padding:'+(depth===0?6:depth<3?5:4)+'px 12px '+(depth===0?6:depth<3?5:4)+'px '+pad+'px;font-weight:'+(depth===0?700:depth===1?600:400)+';position:sticky;left:0;background:'+(depth===0?'white':'#FAFAFA')+'">'+arrow+label+'</td>';
+    years.forEach(function(yr,yi){
+      var pidY='tmy'+yi;var yM=meses.filter(function(m2){return m2.indexOf(yr+'-')===0;});
+      s+='<td style="padding:'+(depth===0?6:5)+'px 10px;text-align:right">'+yearSum(agg,yr)+'</td>';
+      yM.forEach(function(ms){s+='<td class="'+pidY+'-col" style="display:none;padding:'+(depth===0?6:5)+'px 10px;text-align:right">'+valFromAgg(agg,ms)+'</td>';});
+    });
+    s+='</tr>';
+    return s;
+  }
+
+  // Recursive renderer: walks tree by depth, last level (depth===dimOrder.length) is SKU (leaf, not clickable)
+  function walk(node,depth,parentId){
+    var keys=Object.keys(node).sort(function(a,b){
+      return (node[b].totHl||0)-(node[a].totHl||0);
+    });
+    var isLeafLevel=depth===fullDims.length-1; // SKU level
+    keys.forEach(function(key,ki){
+      var n=node[key];
+      var pid=parentId+'_'+ki;
+      var clickable=!isLeafLevel;
+      var labelText=isLeafLevel?key.substring(0,30):key;
+      ht+=rowHtml(labelText,n.agg,depth,pid,parentId===''?null:parentId,clickable);
+      if(!isLeafLevel){
+        walk(n.children,depth+1,pid);
+      }
+    });
+  }
+  walk(tree,0,'');
+
+  tbl.innerHTML=ht+'</tbody></table>';
+  tbl.querySelectorAll('.yr-hdr').forEach(function(th){
+    th.addEventListener('click',function(){
+      var pid=this.dataset.pid;
+      var cols=document.querySelectorAll('.'+pid+'-col');
+      var hidden=cols.length&&cols[0].style.display==='none';
+      cols.forEach(function(col){col.style.display=hidden?'table-cell':'none';});
+      var yr=this.textContent.replace(/[\u25b6\u25bc ]/g,'').trim();
+      this.innerHTML=(hidden?'&#9660; ':'&#9658; ')+yr;
+    });
+  });
+}
+function renderPVolChart(){
+  var data=filt('t');
+  if(!data.length)return;
+  var meses=getMeses(data);
+  var mLs=meses.map(function(m){var p=m.split('-');return MN[parseInt(p[1])]+' '+p[0].slice(2);});
+  // Single-pass aggregation: marca -> period -> {hl, qtyE1, ingE1}
+  var mAgg={};
+  for(var ri=0;ri<data.length;ri++){
+    var r=data[ri];
+    var ms=String(r['Año'])+'-'+String(parseInt(r['Mes'])).padStart(2,'0');
+    var m=r['Marca']||'Sin marca';
+    var hl=nv(r['Hectolitros']);
+    if(!mAgg[m])mAgg[m]={agg:{},totHl:0};
+    var a=mAgg[m].agg[ms]||(mAgg[m].agg[ms]={hl:0,qtyE1:0,ingE1:0});
+    a.hl+=hl;
+    if(String(r['Empaque'])==='1'){a.qtyE1+=nv(r['QtyVnt']);a.ingE1+=nv(r['Ingreso (Bs)']);}
+    mAgg[m].totHl+=hl;
+  }
+  var top5=Object.keys(mAgg).sort(function(a,b){return mAgg[b].totHl-mAgg[a].totHl;}).slice(0,10);
+  if(!top5.length)return;
+  function puAt(m,ms){var a=mAgg[m]&&mAgg[m].agg[ms];return a&&a.qtyE1>0?parseFloat((a.ingE1/a.qtyE1).toFixed(2)):null;}
+  function hlAt(m,ms){var a=mAgg[m]&&mAgg[m].agg[ms];return a?parseFloat(a.hl.toFixed(2)):0;}
+  var pDS=top5.map(function(m,i){return{label:m,data:meses.map(function(ms){return puAt(m,ms);}),borderColor:CC[i%CC.length],backgroundColor:'transparent',tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true};});
+  var vDS=top5.map(function(m,i){return{label:m,data:meses.map(function(ms){return hlAt(m,ms);}),borderColor:CC[i%CC.length],backgroundColor:CC[i%CC.length]+'22',fill:true,tension:0.3,borderWidth:2,pointRadius:3,spanGaps:true};});
+  var opts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#1C2B4A',bodyColor:'#fff',cornerRadius:6,padding:8}},scales:{x:{grid:{display:false},ticks:{font:{size:9},color:'#8492A6',maxRotation:45,autoSkip:true,maxTicksLimit:12}},y:{grid:{color:'rgba(0,0,0,0.05)'},ticks:{font:{size:9},color:'#8492A6'}}}};
+  mkC('p-pvol-precio',{type:'line',data:{labels:mLs,datasets:pDS},options:JSON.parse(JSON.stringify(opts))});
+  mkC('p-pvol-vol',{type:'line',data:{labels:mLs,datasets:vDS},options:JSON.parse(JSON.stringify(opts))});
+  var leg=document.getElementById('p-pvol-leg');
+  if(leg)leg.innerHTML=top5.map(function(m,i){return'<span class="leg-i"><span class="leg-d" style="background:'+CC[i%CC.length]+'"></span>'+m+'</span>';}).join('');
+}
 
 function renderAll(){
   requestAnimationFrame(()=>{
